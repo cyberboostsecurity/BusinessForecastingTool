@@ -24,10 +24,13 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="app.py" />
-    <Compile Include="gemini_test.py" />
     <Compile Include="modules\financial.py" />
+    <Compile Include="modules\investment_financing.py" />
+    <Compile Include="modules\workforce.py" />
+    <Compile Include="modules\risk_assessment.py" />
+    <Compile Include="modules\operational.py" />
     <Compile Include="modules\resource_allocation.py" />
-    <Compile Include="modules\risk.py" />
+    <Compile Include="modules\growth_scaling.py" />
     <Compile Include="modules\__init__.py" />
   </ItemGroup>
   <ItemGroup>

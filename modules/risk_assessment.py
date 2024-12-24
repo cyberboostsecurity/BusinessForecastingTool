@@ -1,83 +1,110 @@
-import streamlit as st
+﻿import streamlit as st
+import matplotlib.pyplot as plt
+import pandas as pd
 
+# Help Menu for Risk Assessment
+def risk_guide():
+    st.header("Risk Assessment Guide")
+    st.info("Learn how to use the Risk Assessment Tool effectively.")
+    st.write("""
+    ### About the Risk Assessment Tool
+    This tool helps businesses identify, evaluate, and visualize risks based on their likelihood and impact.
+
+    ### How to Use
+    1. Select risks from predefined categories or add custom risks.
+    2. Input likelihood as a percentage (0-100%).
+    3. Define impact using Low (1), Medium (2), or High (3), or provide a numerical value.
+    4. View results as a risk score and on a heatmap.
+
+    ### Outputs
+    - **Risk Score**: Calculated as Likelihood × Impact.
+    - **Heatmap**: Visualize risks by likelihood and impact.
+    - **Priority List**: Focus on high-priority risks for mitigation.
+
+    ### Example Risks
+    - **Market Misalignment**: Poor product-market fit.
+    - **Cash Flow Problems**: Inconsistent cash flow.
+    - **Team Skill Gaps**: Lack of qualified personnel.
+    """)
+
+# Risk Assessment Functionality
 def risk_assessment():
-    st.header("Risk Assessment")
-    st.info("Identify key risks and plan for different financial scenarios.")
+    st.header("Risk Assessment Tool")
+    st.info("Evaluate and prioritize risks for your business.")
 
-    sub_module = st.selectbox("Select a Sub-Module", [
-        "Risk Identification", "Scenario Planning"
-    ])
+    # Step 1: Define Risks
+    st.write("### Step 1: Define Risks")
+    predefined_risks = {
+        "Market Misalignment": 40,
+        "Team Skill Gaps": 60,
+        "Cash Flow Problems": 70,
+        "Customer Churn": 50,
+    }
+    risk_data = []
 
-    # Risk Identification
-    if sub_module == "Risk Identification":
-        st.subheader("Risk Identification")
-        st.write("Identify internal and external risks affecting your business.")
+    # Custom Risk Addition
+    custom_risk = st.text_input("Add a Custom Risk", placeholder="Enter a custom risk name...")
+    if custom_risk:
+        predefined_risks[custom_risk] = 50  # Default likelihood for custom risks
 
-        internal_risks = st.text_area(
-            "Internal Risks",
-            help="List risks within your organization (e.g., staff turnover, outdated systems)."
+    selected_risks = st.multiselect(
+        "Select Risks to Assess",
+        options=list(predefined_risks.keys()),
+        default=list(predefined_risks.keys())
+    )
+
+    # Step 2: Input Likelihood and Impact
+    st.write("### Step 2: Input Likelihood and Impact")
+    for risk in selected_risks:
+        st.subheader(risk)
+        likelihood = st.slider(
+            f"Likelihood of {risk} (%)", 
+            min_value=0, 
+            max_value=100, 
+            value=predefined_risks[risk]
+        ) / 100
+        impact = st.number_input(
+            f"Impact of {risk} (Numerical Value, e.g., 1 for Low, 2 for Medium, 3 for High)", 
+            min_value=1, 
+            max_value=5, 
+            value=3
         )
-        external_risks = st.text_area(
-            "External Risks",
-            help="List external risks (e.g., economic downturn, new competitors)."
-        )
+        risk_score = likelihood * impact
+        risk_data.append({"Risk": risk, "Likelihood (%)": likelihood * 100, "Impact": impact, "Risk Score": risk_score})
 
-        if st.button("Analyze Risks"):
-            st.write("### Risk Summary")
-            if internal_risks.strip():
-                st.write("**Internal Risks:**")
-                st.write(internal_risks)
-            else:
-                st.write("No internal risks identified.")
+    # Convert data to DataFrame for better visualization
+    df = pd.DataFrame(risk_data)
 
-            if external_risks.strip():
-                st.write("**External Risks:**")
-                st.write(external_risks)
-            else:
-                st.write("No external risks identified.")
+    # Step 3: Display Risk Scores
+    st.write("### Step 3: Risk Scores and Prioritization")
+    st.write(df.sort_values(by="Risk Score", ascending=False))
 
-    # Scenario Planning
-    elif sub_module == "Scenario Planning":
-        st.subheader("Scenario Planning")
-        st.write("Analyze best-case, worst-case, and likely financial outcomes.")
+    # Step 4: Visualization (Heatmap)
+    st.write("### Step 4: Risk Heatmap")
+    fig, ax = plt.subplots()
+    scatter = ax.scatter(df["Likelihood (%)"], df["Impact"], s=df["Risk Score"] * 20, alpha=0.6, c=df["Risk Score"], cmap="viridis")
+    for i, row in df.iterrows():
+        ax.text(row["Likelihood (%)"], row["Impact"], row["Risk"], fontsize=8)
+    ax.set_title("Risk Heatmap")
+    ax.set_xlabel("Likelihood (%)")
+    ax.set_ylabel("Impact")
+    fig.colorbar(scatter, label="Risk Score")
+    st.pyplot(fig)
 
-        revenue = st.number_input(
-            "Monthly Revenue (\u00A3)", min_value=0.0, step=100.0,
-            help="Enter the current monthly revenue."
-        )
-        costs = st.number_input(
-            "Monthly Costs (\u00A3)", min_value=0.0, step=100.0,
-            help="Enter the current monthly costs."
-        )
-        best_case_growth = st.slider(
-            "Best-Case Growth Rate (%)", min_value=0, max_value=100, value=20,
-            help="Enter the expected revenue growth rate in the best-case scenario."
-        )
-        worst_case_reduction = st.slider(
-            "Worst-Case Reduction Rate (%)", min_value=0, max_value=100, value=20,
-            help="Enter the expected revenue reduction rate in the worst-case scenario."
-        )
+    # Option to Download Results
+    st.write("### Download Results")
+    st.download_button(
+        label="Download Risk Data as CSV",
+        data=df.to_csv(index=False),
+        file_name="risk_assessment.csv",
+        mime="text/csv"
+    )
 
-        if st.button("Calculate Scenarios"):
-            # Best-case scenario
-            best_case_revenue = revenue * (1 + best_case_growth / 100)
-            best_case_profit = best_case_revenue - costs
+# Main Streamlit App Navigation
+st.sidebar.title("Navigation")
+menu = st.sidebar.selectbox("Choose a Module", ["Help (Risk Guide)", "Risk Assessment"])
 
-            # Worst-case scenario
-            worst_case_revenue = revenue * (1 - worst_case_reduction / 100)
-            worst_case_profit = worst_case_revenue - costs
-
-            # Likely scenario (average of best and worst)
-            likely_revenue = (best_case_revenue + worst_case_revenue) / 2
-            likely_profit = likely_revenue - costs
-
-            # Display results
-            st.write("### Scenario Outcomes")
-            st.write(f"- **Best-Case Revenue:** \u00A3{best_case_revenue:.2f}, **Profit:** \u00A3{best_case_profit:.2f}")
-            st.write(f"- **Worst-Case Revenue:** \u00A3{worst_case_revenue:.2f}, **Profit:** \u00A3{worst_case_profit:.2f}")
-            st.write(f"- **Likely Revenue:** \u00A3{likely_revenue:.2f}, **Profit:** \u00A3{likely_profit:.2f}")
-
-            if likely_profit < 0:
-                st.warning("Likely scenario indicates a potential loss. Consider mitigating risks.")
-
-
+if menu == "Help (Risk Guide)":
+    risk_guide()
+elif menu == "Risk Assessment":
+    risk_assessment()

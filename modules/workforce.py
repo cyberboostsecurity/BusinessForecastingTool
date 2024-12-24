@@ -2,10 +2,10 @@ import streamlit as st
 
 def workforce_projections():
     st.header("Workforce and Culture Projections")
-    st.info("Analyze staffing costs and productivity metrics for better workforce planning.")
+    st.info("Analyze staffing costs, productivity metrics, and employee affordability.")
 
     sub_module = st.selectbox("Select a Sub-Module", [
-        "Staffing Costs", "Productivity Management"
+        "Staffing Costs", "Productivity Management", "Employee Affordability"
     ])
 
     # Staffing Costs
@@ -65,3 +65,37 @@ def workforce_projections():
             else:
                 st.warning("Total hours available must be greater than zero.")
 
+    # Employee Affordability
+    elif sub_module == "Employee Affordability":
+        st.subheader("Employee Affordability Calculator")
+        st.write("Estimate the revenue increase and time required to afford a new employee.")
+
+        salary = st.number_input("Annual Salary of Employee (\u00A3)", min_value=0.0, step=1000.0)
+        overhead = st.number_input("Overhead Costs (\u00A3)", min_value=0.0, step=500.0)
+        production_rate = st.slider("Production Rate (% Billable Time)", min_value=0, max_value=100, value=65) / 100
+        current_revenue = st.number_input("Current Monthly Revenue (\u00A3)", min_value=0.0, step=100.0)
+        growth_rate = st.slider("Expected Monthly Revenue Growth Rate (%)", min_value=0, max_value=50, value=10) / 100
+        safety_buffer = st.slider("Safety Buffer (% Extra Revenue)", min_value=0, max_value=50, value=10) / 100
+
+        if st.button("Calculate Affordability"):
+            # Step 1: Calculate monthly cost of the employee
+            monthly_cost = (salary + overhead) / 12
+
+            # Step 2: Calculate required revenue increase with safety buffer
+            required_monthly_revenue = (monthly_cost / production_rate) * (1 + safety_buffer)
+
+            # Step 3: Calculate time to achieve target
+            if growth_rate > 0:
+                monthly_growth = current_revenue * growth_rate
+                time_to_target = required_monthly_revenue / monthly_growth
+            else:
+                time_to_target = float('inf')  # Infinite if no growth rate
+
+            # Display results
+            st.write("### Results")
+            st.write(f"- **Monthly Employee Cost (Salary + Overhead):** \u00A3{monthly_cost:.2f}")
+            st.write(f"- **Required Monthly Revenue (with {int(safety_buffer * 100)}% Buffer):** \u00A3{required_monthly_revenue:.2f}")
+            st.write(f"- **Estimated Time to Achieve Target Revenue:** {time_to_target:.2f} months")
+
+            if time_to_target == float('inf'):
+                st.warning("A growth rate of 0% means the target will never be reached.")

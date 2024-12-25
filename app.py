@@ -1,17 +1,25 @@
 import streamlit as st
+from modules.operational import operational_planning  # Correct import
 from modules.financial import financial_forecasting
-from modules.operational import operational_planning
 from modules.risk_assessment import risk_assessment
 from modules.growth_scaling import growth_scaling
 from modules.investment_financing import investment_financing
-from modules.workforce import workforce_projections  # Import new module
+from modules.workforce import workforce_projections  
 
 # Navigation
 st.title("Business Forecasting Tool")
 st.sidebar.header("Navigation")
 selected_module = st.sidebar.selectbox(
     "Select a Module",
-    ["Home", "Financial Forecasting", "Operational Planning", "Risk Assessment", "Growth & Scaling Strategy", "Investment and Financing Needs", "Workforce and Culture Projections"]  # Add new module
+    [
+        "Home", 
+        "Financial Forecasting", 
+        "Operational Planning", 
+        "Risk Assessment", 
+        "Growth & Scaling Strategy", 
+        "Investment and Financing Needs", 
+        "Workforce and Culture Projections"
+    ]
 )
 
 # Home Page

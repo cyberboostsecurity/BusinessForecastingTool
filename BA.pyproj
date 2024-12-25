@@ -29,7 +29,7 @@
     <Compile Include="modules\workforce.py" />
     <Compile Include="modules\risk_assessment.py" />
     <Compile Include="modules\operational.py" />
-    <Compile Include="modules\resource_allocation.py" />
+    <Compile Include="modules\to be revisited.py" />
     <Compile Include="modules\growth_scaling.py" />
     <Compile Include="modules\__init__.py" />
   </ItemGroup>

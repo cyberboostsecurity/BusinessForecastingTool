@@ -11,30 +11,59 @@ def workforce_projections():
     # Staffing Costs
     if sub_module == "Staffing Costs":
         st.subheader("Staffing Costs")
-        st.write("Forecast staffing costs based on salaries, benefits, and headcount.")
+        st.write("Forecast staffing costs based on salaries, benefits, taxes, and additional expenses.")
 
-        headcount = st.number_input(
-            "Number of Employees", min_value=0, step=1,
-            help="Enter the total number of employees."
-        )
-        average_salary = st.number_input(
-            "Average Salary per Employee (\u00A3)", min_value=0.0, step=1000.0,
-            help="Enter the average annual salary per employee."
-        )
-        average_benefits = st.number_input(
-            "Average Benefits per Employee (\u00A3)", min_value=0.0, step=500.0,
-            help="Enter the average annual benefits per employee."
+        # Inputs for multiple roles
+        number_of_roles = st.number_input(
+            "Number of Roles", min_value=1, step=1, value=1, 
+            help="Enter the number of distinct employee roles."
         )
 
+        role_data = []
+        for i in range(int(number_of_roles)):
+            st.write(f"### Role {i + 1}")
+            role_count = st.number_input(f"Number of Employees for Role {i + 1}", min_value=0, step=1, value=0)
+            average_salary = st.number_input(f"Average Salary per Employee (\u00A3) for Role {i + 1}", min_value=0.0, step=1000.0, value=30000.0)
+            average_benefits = st.number_input(f"Average Benefits per Employee (\u00A3) for Role {i + 1}", min_value=0.0, step=500.0, value=5000.0)
+            role_data.append((role_count, average_salary, average_benefits))
+
+        # Additional costs
+        recruitment_costs = st.number_input("Recruitment Costs (\u00A3)", min_value=0.0, step=500.0, value=1000.0)
+        training_costs = st.number_input("Training Costs (\u00A3)", min_value=0.0, step=500.0, value=2000.0)
+        overhead_allocation = st.slider("Operational Overhead Allocation (%)", min_value=0, max_value=50, value=10) / 100
+        tax_rate = st.slider("Salary Tax Rate (%)", min_value=0, max_value=50, value=15) / 100
+
+        # Calculate costs
         if st.button("Calculate Staffing Costs"):
-            total_salary = headcount * average_salary
-            total_benefits = headcount * average_benefits
+            total_salary = sum(role[0] * role[1] for role in role_data)
+            total_benefits = sum(role[0] * role[2] for role in role_data)
+            salary_taxes = total_salary * tax_rate
             total_staffing_costs = total_salary + total_benefits
+            overhead_costs = total_staffing_costs * overhead_allocation
+            grand_total_costs = total_staffing_costs + recruitment_costs + training_costs + salary_taxes + overhead_costs
 
+            # Display results
             st.write("### Staffing Cost Breakdown")
             st.write(f"- **Total Salary Costs:** \u00A3{total_salary:.2f}")
             st.write(f"- **Total Benefits Costs:** \u00A3{total_benefits:.2f}")
-            st.write(f"- **Total Staffing Costs:** \u00A3{total_staffing_costs:.2f}")
+            st.write(f"- **Salary Taxes ({int(tax_rate * 100)}%):** \u00A3{salary_taxes:.2f}")
+            st.write(f"- **Recruitment Costs:** \u00A3{recruitment_costs:.2f}")
+            st.write(f"- **Training Costs:** \u00A3{training_costs:.2f}")
+            st.write(f"- **Overhead Costs (Allocated):** \u00A3{overhead_costs:.2f}")
+            st.write(f"- **Grand Total Staffing Costs:** \u00A3{grand_total_costs:.2f}")
+
+            # Visualization
+            st.write("### Cost Breakdown")
+            import matplotlib.pyplot as plt
+
+            labels = ['Salaries', 'Benefits', 'Taxes', 'Recruitment', 'Training', 'Overhead']
+            values = [total_salary, total_benefits, salary_taxes, recruitment_costs, training_costs, overhead_costs]
+            plt.figure(figsize=(6, 6))
+            plt.pie(values, labels=labels, autopct='%1.1f%%', startangle=140)
+            plt.title("Staffing Cost Breakdown")
+            st.pyplot(plt)
+
+
 
     # Productivity Management
     elif sub_module == "Productivity Management":

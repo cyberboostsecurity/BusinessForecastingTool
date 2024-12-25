@@ -470,20 +470,107 @@ def scenario_planning():
 
 def risk_adjusted_scaling():
     st.subheader("Risk-Adjusted Scaling")
-    st.write("""
-    Integrate risk metrics into your scaling strategy. 
-    Metrics include:
-    - Market saturation risk
-    - Competition intensity
-    - Volatility adjustments
-    """)
+    st.write("Analyze and integrate risk metrics into your scaling strategy.")
+
+    # Step 1: Input Risk Factors
+    st.write("### Step 1: Input Risk Factors")
+    market_saturation = st.slider(
+        "Market Saturation (%)", min_value=0, max_value=100, value=50,
+        help="Percentage of the market already served by competitors."
+    )
+    competition_intensity = st.slider(
+        "Competition Intensity (1-5)", min_value=1, max_value=5, value=3,
+        help="Level of competition in the market, with 1 being low and 5 being high."
+    )
+    market_volatility = st.slider(
+        "Market Volatility (1-5)", min_value=1, max_value=5, value=3,
+        help="Market stability, with 1 being stable and 5 being highly volatile."
+    )
+    revenue_growth = st.number_input(
+        "Projected Revenue Growth (%)", min_value=0.0, step=0.1,
+        help="Expected revenue growth percentage from scaling."
+    )
+    scaling_costs = st.number_input(
+        "Scaling Costs (\u00A3)", min_value=0.0, step=100.0,
+        help="Costs associated with scaling operations."
+    )
+
+    # Step 2: Calculate Risk-Adjusted Metrics
+    st.write("### Step 2: Risk-Adjusted Metrics")
+    risk_score = ((market_saturation / 100) * competition_intensity * market_volatility)
+    if scaling_costs > 0:
+        risk_adjusted_roi = ((revenue_growth - risk_score) / scaling_costs) * 100
+    else:
+        risk_adjusted_roi = 0
+
+    st.write(f"- **Risk Score:** {risk_score:.2f} (Higher = riskier)")
+    st.write(f"- **Risk-Adjusted ROI:** {risk_adjusted_roi:.2f}%")
+
+    # Step 3: Recommendations
+    st.write("### Recommendations")
+    if risk_adjusted_roi > 20 and risk_score < 3:
+        st.success("This scaling strategy appears low risk and profitable. Consider proceeding.")
+    elif risk_score >= 3:
+        st.warning("This scaling strategy has significant risks. Consider mitigating risks before proceeding.")
+    else:
+        st.warning("This scaling strategy may not be profitable. Reassess your approach.")
+
+    # Visualization
+    st.write("### Visualization")
+    metrics = ["Risk Score", "Risk-Adjusted ROI"]
+    values = [risk_score, risk_adjusted_roi]
+    fig = px.bar(x=metrics, y=values, title="Risk-Adjusted Scaling Metrics", labels={"x": "Metrics", "y": "Values"})
+    st.plotly_chart(fig)
+
 
 def scaling_efficiency():
     st.subheader("Scaling Efficiency")
-    st.write("""
-    Ensure your scaling strategy is efficient and sustainable. 
-    Metrics include:
-    - Revenue per resource
-    - Cost-scaling factors
-    - Sales efficiency ratios
-    """)
+    st.write("Assess the efficiency and sustainability of your scaling strategy.")
+
+    # Step 1: Input Efficiency Metrics
+    st.write("### Step 1: Input Efficiency Metrics")
+    revenue = st.number_input(
+        "Projected Revenue (\u00A3)", min_value=0.0, step=100.0,
+        help="Expected revenue after scaling."
+    )
+    scaling_resources = st.number_input(
+        "Scaling Resources (e.g., Employees, Equipment)", min_value=1, step=1,
+        help="Total number of resources used for scaling."
+    )
+    scaling_costs = st.number_input(
+        "Scaling Costs (\u00A3)", min_value=0.0, step=100.0,
+        help="Costs associated with scaling operations."
+    )
+
+    # Step 2: Calculate Efficiency Metrics
+    st.write("### Step 2: Efficiency Metrics")
+    if scaling_resources > 0:
+        revenue_per_resource = revenue / scaling_resources
+    else:
+        revenue_per_resource = 0
+
+    if scaling_costs > 0:
+        cost_scaling_factor = revenue / scaling_costs
+    else:
+        cost_scaling_factor = 0
+
+    st.write(f"- **Revenue per Resource:** \u00A3{revenue_per_resource:.2f}")
+    st.write(f"- **Cost Scaling Factor:** {cost_scaling_factor:.2f} (Higher is better)")
+
+    # Step 3: Recommendations
+    st.write("### Recommendations")
+    if cost_scaling_factor > 2 and revenue_per_resource > 5000:
+        st.success("Your scaling strategy is efficient and sustainable. Keep scaling!")
+    elif cost_scaling_factor > 1:
+        st.info("Your scaling strategy is acceptable, but there's room for improvement.")
+    else:
+        st.warning("Your scaling strategy is inefficient. Reassess your resources and costs.")
+
+    # Visualization
+    st.write("### Visualization")
+    metrics = ["Revenue per Resource", "Cost Scaling Factor"]
+    values = [revenue_per_resource, cost_scaling_factor]
+    fig = px.bar(x=metrics, y=values, title="Scaling Efficiency Metrics", labels={"x": "Metrics", "y": "Values"})
+    st.plotly_chart(fig)
+
+

@@ -5,23 +5,17 @@ from modules.risk_assessment import risk_assessment
 from modules.growth_scaling import growth_scaling
 from modules.investment_financing import investment_financing
 from modules.workforce import workforce_projections  
+from modules.help import help_page
 
 # Navigation
 st.title("Business Forecasting Tool")
 st.sidebar.header("Navigation")
+
+# Update the navigation menu
 selected_module = st.sidebar.selectbox(
     "Select a Module",
-    [
-        "Home", 
-        "Financial Forecasting", 
-        "Operational Planning", 
-        "Risk Assessment", 
-        "Growth & Scaling Strategy", 
-        "Investment and Financing Needs", 
-        "Workforce and Culture Projections"
-    ]
+    ["Home", "Financial Forecasting", "Operational Planning", "Risk Assessment", "Growth & Scaling Strategy", "Investment and Financing Needs", "Workforce and Culture Projections", "Help"]
 )
-
 # Home Page
 if selected_module == "Home":
     st.header("Welcome to the Business Forecasting Tool")
@@ -30,6 +24,7 @@ if selected_module == "Home":
         including financial projections, operational planning, risk assessment, growth, and workforce planning.
         Use the sidebar to navigate between modules.
     """)
+
 
 # Financial Forecasting Module
 elif selected_module == "Financial Forecasting":
@@ -54,3 +49,7 @@ elif selected_module == "Investment and Financing Needs":
 # Workforce and Culture Projections Module
 elif selected_module == "Workforce and Culture Projections":
     workforce_projections()
+
+# Add a condition to display the help page
+elif selected_module == "Help":
+    help_page()

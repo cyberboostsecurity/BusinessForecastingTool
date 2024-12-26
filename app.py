@@ -7,6 +7,8 @@ from modules.investment_financing import investment_financing
 from modules.workforce import workforce_projections
 from modules.help import help_page
 from modules.dashboard import dashboard  # Directly import the function
+from modules.db_utils import save_to_database, load_from_database, clear_data
+
 
 # Navigation
 st.title("Business Forecasting Tool")
@@ -68,3 +70,8 @@ elif selected_module == "Workforce and Culture Projections":
 # Help Module
 elif selected_module == "Help":
     help_page()
+
+# Option to Clear Database
+if st.sidebar.button("Clear All Database Data"):
+    clear_data()
+    st.sidebar.success("All database data has been cleared!")

@@ -28,6 +28,7 @@
     <Compile Include="modules\investment_financing.py" />
     <Compile Include="modules\help.py" />
     <Compile Include="modules\dashboard.py" />
+    <Compile Include="modules\db_utils.py" />
     <Compile Include="modules\workforce.py" />
     <Compile Include="modules\risk_assessment.py" />
     <Compile Include="modules\operational.py" />

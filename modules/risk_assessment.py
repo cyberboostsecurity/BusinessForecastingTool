@@ -1,7 +1,10 @@
 ﻿import streamlit as st
-import matplotlib.pyplot as plt
 import pandas as pd
 import numpy as np
+import matplotlib.pyplot as plt  # Ensure this import is included
+from modules.db_utils import save_risk_data, clear_data
+
+
 
 def risk_assessment():
     st.header("Risk Assessment Tool")
@@ -91,34 +94,47 @@ def risk_assessment():
 
     # Step 3: Display Risk Scores
     st.write("### Step 3: Risk Scores and Prioritization")
-    st.write(df.sort_values(by="Risk Score", ascending=False))
-
-    # Step 4: Visualization (Bar Chart)
-    st.write("### Step 4: Risk Bar Chart")
     if not df.empty:
-        fig, ax = plt.subplots(figsize=(10, 6))
+        st.write(df.sort_values(by="Risk Score", ascending=False))
+
+        # Step 4: Visualization (Bar Chart)
+        st.write("### Step 4: Risk Bar Chart")
+        fig, ax = plt.subplots(figsize=(10, 6))  # This line should work now after importing matplotlib.pyplot
         df_sorted = df.sort_values(by="Risk Score", ascending=False)
         ax.barh(df_sorted["Risk"], df_sorted["Risk Score"], color='skyblue')
         ax.set_xlabel("Risk Score")
         ax.set_title("Risk Prioritization")
         st.pyplot(fig)
 
-    # Step 5: Overall Risk Score
-    if not df.empty:
+        # Step 5: Overall Risk Score
         overall_risk_score = np.mean(df["Risk Score"])
         st.write("### Step 5: Overall Risk Score")
         st.metric(label="Overall Risk Score", value=f"{overall_risk_score:.2f}")
-        
+
         # Gauge-style visualization using a horizontal bar
         fig, ax = plt.subplots(figsize=(8, 2))
         ax.barh(["Overall Risk"], [overall_risk_score], color="orange")
         ax.set_xlim(0, 10)  # Assuming max score is 10
         ax.set_title("Overall Risk Score")
         st.pyplot(fig)
-        
+
         # Top Risks
         st.write("### Top 3 Risks Contributing to Overall Risk")
         st.write(df_sorted.head(3))
+
+    # Export to Database Button
+    if st.button("Export to Other Modules"):
+        risk_db_data = [
+            (row["Risk"], row["Likelihood (%)"], row["Adjusted Impact (£)"], row["Mitigation Cost (£)"], row["Risk Score"])
+            for _, row in df.iterrows()
+        ]
+        save_risk_data(risk_db_data)  # Save to database
+        st.success("Risk data exported to the database!")
+
+    # Clear Database Button
+    if st.button("Clear Risk Data"):
+        clear_data("risk_data")
+        st.success("Risk data cleared from the database!")
 
     # Option to Download Results
     st.write("### Download Results")

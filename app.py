@@ -1,21 +1,33 @@
-import streamlit as st
-from modules.operational import operational_planning  # Correct import
+﻿import streamlit as st
+from modules.operational import operational_planning
 from modules.financial import financial_forecasting
 from modules.risk_assessment import risk_assessment
 from modules.growth_scaling import growth_scaling
 from modules.investment_financing import investment_financing
-from modules.workforce import workforce_projections  
+from modules.workforce import workforce_projections
 from modules.help import help_page
+from modules.dashboard import dashboard  # Directly import the function
 
 # Navigation
 st.title("Business Forecasting Tool")
 st.sidebar.header("Navigation")
 
-# Update the navigation menu
-selected_module = st.sidebar.selectbox(
+# Update the navigation menu to use a radio button
+selected_module = st.sidebar.radio(
     "Select a Module",
-    ["Home", "Financial Forecasting", "Operational Planning", "Risk Assessment", "Growth & Scaling Strategy", "Investment and Financing Needs", "Workforce and Culture Projections", "Help"]
+    [
+        "Home",
+        "Dashboard",  # Dashboard is now in its separate module
+        "Financial Forecasting",
+        "Operational Planning",
+        "Risk Assessment",
+        "Growth & Scaling Strategy",
+        "Investment and Financing Needs",
+        "Workforce and Culture Projections",
+        "Help"
+    ]
 )
+
 # Home Page
 if selected_module == "Home":
     st.header("Welcome to the Business Forecasting Tool")
@@ -25,6 +37,9 @@ if selected_module == "Home":
         Use the sidebar to navigate between modules.
     """)
 
+# Dashboard Module
+elif selected_module == "Dashboard":
+    dashboard()
 
 # Financial Forecasting Module
 elif selected_module == "Financial Forecasting":
@@ -50,6 +65,6 @@ elif selected_module == "Investment and Financing Needs":
 elif selected_module == "Workforce and Culture Projections":
     workforce_projections()
 
-# Add a condition to display the help page
+# Help Module
 elif selected_module == "Help":
     help_page()

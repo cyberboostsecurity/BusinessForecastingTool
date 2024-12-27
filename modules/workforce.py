@@ -1,16 +1,18 @@
 import streamlit as st
+import numpy as np
+import plotly.express as px
 
 def workforce_projections():
-    st.header("Workforce and Culture Projections")
+    st.header("Workforce and Culture Projections with Monte Carlo")
     st.info("Analyze staffing costs, productivity metrics, and employee affordability.")
 
     sub_module = st.selectbox("Select a Sub-Module", [
         "Staffing Costs", "Productivity Management", "Employee Affordability"
     ])
 
-    # Staffing Costs
+    # Submodule: Staffing Costs
     if sub_module == "Staffing Costs":
-        st.subheader("Staffing Costs")
+        st.subheader("Staffing Costs with Monte Carlo")
         st.write("Forecast staffing costs based on salaries, benefits, taxes, and additional expenses.")
 
         # Inputs for multiple roles
@@ -24,8 +26,10 @@ def workforce_projections():
             st.write(f"### Role {i + 1}")
             role_count = st.number_input(f"Number of Employees for Role {i + 1}", min_value=0, step=1, value=0)
             average_salary = st.number_input(f"Average Salary per Employee (\u00A3) for Role {i + 1}", min_value=0.0, step=1000.0, value=30000.0)
+            salary_variability = st.slider(f"Salary Variability (%) for Role {i + 1}", min_value=0, max_value=50, value=10) / 100
             average_benefits = st.number_input(f"Average Benefits per Employee (\u00A3) for Role {i + 1}", min_value=0.0, step=500.0, value=5000.0)
-            role_data.append((role_count, average_salary, average_benefits))
+            benefits_variability = st.slider(f"Benefits Variability (%) for Role {i + 1}", min_value=0, max_value=50, value=10) / 100
+            role_data.append((role_count, average_salary, salary_variability, average_benefits, benefits_variability))
 
         # Additional costs
         recruitment_costs = st.number_input("Recruitment Costs (\u00A3)", min_value=0.0, step=500.0, value=1000.0)
@@ -33,46 +37,59 @@ def workforce_projections():
         overhead_allocation = st.slider("Operational Overhead Allocation (%)", min_value=0, max_value=50, value=10) / 100
         tax_rate = st.slider("Salary Tax Rate (%)", min_value=0, max_value=50, value=15) / 100
 
-        # Calculate costs
-        if st.button("Calculate Staffing Costs"):
-            total_salary = sum(role[0] * role[1] for role in role_data)
-            total_benefits = sum(role[0] * role[2] for role in role_data)
+        # Monte Carlo Simulations for Costs
+        simulations = 1000
+        simulated_costs = []
+
+        for _ in range(simulations):
+            total_salary = sum(
+                role[0] * np.random.normal(loc=role[1], scale=role[1] * role[2]) for role in role_data
+            )
+            total_benefits = sum(
+                role[0] * np.random.normal(loc=role[3], scale=role[3] * role[4]) for role in role_data
+            )
             salary_taxes = total_salary * tax_rate
             total_staffing_costs = total_salary + total_benefits
             overhead_costs = total_staffing_costs * overhead_allocation
             grand_total_costs = total_staffing_costs + recruitment_costs + training_costs + salary_taxes + overhead_costs
+            simulated_costs.append(grand_total_costs)
 
-            # Display results
-            st.write("### Staffing Cost Breakdown")
-            st.write(f"- **Total Salary Costs:** \u00A3{total_salary:.2f}")
-            st.write(f"- **Total Benefits Costs:** \u00A3{total_benefits:.2f}")
-            st.write(f"- **Salary Taxes ({int(tax_rate * 100)}%):** \u00A3{salary_taxes:.2f}")
-            st.write(f"- **Recruitment Costs:** \u00A3{recruitment_costs:.2f}")
-            st.write(f"- **Training Costs:** \u00A3{training_costs:.2f}")
-            st.write(f"- **Overhead Costs (Allocated):** \u00A3{overhead_costs:.2f}")
-            st.write(f"- **Grand Total Staffing Costs:** \u00A3{grand_total_costs:.2f}")
+        # Results
+        mean_costs = np.mean(simulated_costs)
+        p5_costs = np.percentile(simulated_costs, 5)
+        p95_costs = np.percentile(simulated_costs, 95)
 
-            # Visualization
-            st.write("### Cost Breakdown")
-            import matplotlib.pyplot as plt
+        st.write("### Monte Carlo Results")
+        st.write(f"- **Mean Total Staffing Costs:** \u00A3{mean_costs:.2f}")
+        st.write(f"- **Staffing Costs Range (5th to 95th Percentile):** \u00A3{p5_costs:.2f} to \u00A3{p95_costs:.2f}")
 
-            labels = ['Salaries', 'Benefits', 'Taxes', 'Recruitment', 'Training', 'Overhead']
-            values = [total_salary, total_benefits, salary_taxes, recruitment_costs, training_costs, overhead_costs]
-            plt.figure(figsize=(6, 6))
-            plt.pie(values, labels=labels, autopct='%1.1f%%', startangle=140)
-            plt.title("Staffing Cost Breakdown")
-            st.pyplot(plt)
+        # Visualization
+        st.write("### Cost Distribution")
+        fig_costs = px.histogram(
+            simulated_costs,
+            nbins=50,
+            title="Total Staffing Costs Distribution",
+            labels={"x": "Total Staffing Costs (\u00A3)", "y": "Frequency"}
+        )
+        st.plotly_chart(fig_costs)
 
-
-
-    # Productivity Management
+    # Submodule: Productivity Management
     elif sub_module == "Productivity Management":
-        st.subheader("Productivity Management")
-        st.write("Analyze workforce productivity and utilization rates.")
+        st.subheader("Productivity Management with Monte Carlo")
+        st.write("Analyze workforce productivity and utilization rates using probabilistic simulations.")
 
-        hours_worked_per_employee = st.number_input(
+        # Inputs
+        num_employees = st.number_input(
+            "Number of Employees", min_value=1, step=1,
+            help="Total number of employees in your workforce."
+        )
+        avg_hours_worked_per_employee = st.number_input(
             "Average Hours Worked per Employee (Monthly)", min_value=0.0, step=1.0,
             help="Enter the average hours worked by each employee in a month."
+        )
+        hours_variability = st.slider(
+            "Hours Worked Variability (%)", min_value=0, max_value=50, value=10,
+            help="Expected variability in hours worked per employee."
         )
         total_hours_available = st.number_input(
             "Total Hours Available (Monthly)", min_value=0.0, step=1.0,
@@ -82,49 +99,131 @@ def workforce_projections():
             "Monthly Revenue (\u00A3)", min_value=0.0, step=100.0,
             help="Enter the total monthly revenue generated."
         )
+        revenue_variability = st.slider(
+            "Revenue Variability (%)", min_value=0, max_value=50, value=10,
+            help="Expected variability in monthly revenue."
+        )
 
-        if st.button("Calculate Productivity"):
-            if total_hours_available > 0:
-                productivity_rate = (hours_worked_per_employee / total_hours_available) * 100
-                revenue_per_hour = revenue_generated / total_hours_available
+        # Monte Carlo Simulations
+        simulations = 1000
+        simulated_hours = np.random.normal(
+            loc=avg_hours_worked_per_employee,
+            scale=avg_hours_worked_per_employee * (hours_variability / 100),
+            size=(simulations, num_employees)
+        )
+        total_simulated_hours = simulated_hours.sum(axis=1)
+        simulated_revenue = np.random.normal(
+            loc=revenue_generated,
+            scale=revenue_generated * (revenue_variability / 100),
+            size=simulations
+        )
+        productivity_rates = (total_simulated_hours / total_hours_available) * 100
+        revenue_per_hour = simulated_revenue / total_simulated_hours
 
-                st.write("### Productivity Metrics")
-                st.write(f"- **Productivity Rate:** {productivity_rate:.2f}%")
-                st.write(f"- **Revenue per Hour:** \u00A3{revenue_per_hour:.2f}")
-            else:
-                st.warning("Total hours available must be greater than zero.")
+        mean_productivity_rate = np.mean(productivity_rates)
+        p5_productivity_rate = np.percentile(productivity_rates, 5)
+        p95_productivity_rate = np.percentile(productivity_rates, 95)
 
-    # Employee Affordability
+        mean_revenue_per_hour = np.mean(revenue_per_hour)
+        p5_revenue_per_hour = np.percentile(revenue_per_hour, 5)
+        p95_revenue_per_hour = np.percentile(revenue_per_hour, 95)
+
+        st.write("### Monte Carlo Results")
+        st.write(f"- **Mean Productivity Rate:** {mean_productivity_rate:.2f}%")
+        st.write(f"- **Productivity Rate Range (5th to 95th Percentile):** {p5_productivity_rate:.2f}% to {p95_productivity_rate:.2f}%")
+        st.write(f"- **Mean Revenue per Hour:** \u00A3{mean_revenue_per_hour:.2f}")
+        st.write(f"- **Revenue per Hour Range (5th to 95th Percentile):** \u00A3{p5_revenue_per_hour:.2f} to \u00A3{p95_revenue_per_hour:.2f}")
+
+        # Visualizations
+        st.write("### Productivity Rate Distribution")
+        fig_productivity = px.histogram(
+            productivity_rates,
+            nbins=50,
+            title="Productivity Rate Distribution",
+            labels={"x": "Productivity Rate (%)", "y": "Frequency"}
+        )
+        st.plotly_chart(fig_productivity)
+
+        st.write("### Revenue per Hour Distribution")
+        fig_revenue_per_hour = px.histogram(
+            revenue_per_hour,
+            nbins=50,
+            title="Revenue per Hour Distribution",
+            labels={"x": "Revenue per Hour (\u00A3)", "y": "Frequency"}
+        )
+        st.plotly_chart(fig_revenue_per_hour)
+
+    # Submodule: Employee Affordability
     elif sub_module == "Employee Affordability":
-        st.subheader("Employee Affordability Calculator")
-        st.write("Estimate the revenue increase and time required to afford a new employee.")
+        st.subheader("Employee Affordability with Monte Carlo")
+        st.write("Estimate the time required to afford a new employee based on revenue growth.")
 
+        # Inputs
         salary = st.number_input("Annual Salary of Employee (\u00A3)", min_value=0.0, step=1000.0)
         overhead = st.number_input("Overhead Costs (\u00A3)", min_value=0.0, step=500.0)
         production_rate = st.slider("Production Rate (% Billable Time)", min_value=0, max_value=100, value=65) / 100
-        current_revenue = st.number_input("Current Monthly Revenue (\u00A3)", min_value=0.0, step=100.0)
+        initial_revenue = st.slider(
+            "Current Monthly Revenue (\u00A3)", min_value=0.0, max_value=100000.0, step=500.0, value=10000.0,
+            help="Set your current monthly revenue."
+        )
         growth_rate = st.slider("Expected Monthly Revenue Growth Rate (%)", min_value=0, max_value=50, value=10) / 100
-        safety_buffer = st.slider("Safety Buffer (% Extra Revenue)", min_value=0, max_value=50, value=10) / 100
+        revenue_variability = st.slider(
+            "Revenue Growth Variability (%)", min_value=0, max_value=50, value=10,
+            help="Expected variability in monthly revenue growth."
+        )
+        max_simulation_months = st.number_input(
+            "Max Simulation Duration (Months)", min_value=12, max_value=120, value=36,
+            help="Maximum number of months to simulate for affordability."
+        )
 
-        if st.button("Calculate Affordability"):
-            # Step 1: Calculate monthly cost of the employee
-            monthly_cost = (salary + overhead) / 12
+        # Monte Carlo Simulations
+        simulations = 1000
+        total_employee_cost = (salary + overhead) / 12
 
-            # Step 2: Calculate required revenue increase with safety buffer
-            required_monthly_revenue = (monthly_cost / production_rate) * (1 + safety_buffer)
+        time_to_afford = []
+        for _ in range(simulations):
+            current_revenue = initial_revenue
+            time = 0
+            affordable = False
 
-            # Step 3: Calculate time to achieve target
-            if growth_rate > 0:
-                monthly_growth = current_revenue * growth_rate
-                time_to_target = required_monthly_revenue / monthly_growth
-            else:
-                time_to_target = float('inf')  # Infinite if no growth rate
+            while time <= max_simulation_months:
+                # Simulate revenue growth with variability
+                growth = np.random.normal(loc=growth_rate, scale=growth_rate * (revenue_variability / 100))
+                current_revenue *= (1 + growth)
+                time += 1
 
-            # Display results
-            st.write("### Results")
-            st.write(f"- **Monthly Employee Cost (Salary + Overhead):** \u00A3{monthly_cost:.2f}")
-            st.write(f"- **Required Monthly Revenue (with {int(safety_buffer * 100)}% Buffer):** \u00A3{required_monthly_revenue:.2f}")
-            st.write(f"- **Estimated Time to Achieve Target Revenue:** {time_to_target:.2f} months")
+                # Check if revenue reaches affordability threshold
+                if current_revenue * production_rate >= total_employee_cost:
+                    time_to_afford.append(time)
+                    affordable = True
+                    break
 
-            if time_to_target == float('inf'):
-                st.warning("A growth rate of 0% means the target will never be reached.")
+            if not affordable:
+                time_to_afford.append(float('inf'))
+
+        # Filter results
+        finite_times = [t for t in time_to_afford if t != float('inf')]
+        mean_time = np.mean(finite_times)
+        p5_time = np.percentile(finite_times, 5)
+        p95_time = np.percentile(finite_times, 95)
+
+        # Results
+        st.write("### Monte Carlo Results")
+        if finite_times:
+            st.write(f"- **Mean Time to Affordability:** {mean_time:.2f} months")
+            st.write(f"- **Time Range (5th to 95th Percentile):** {p5_time:.2f} to {p95_time:.2f} months")
+        else:
+            st.warning("Affordability is not achievable within the simulation duration. Consider adjusting inputs.")
+
+        # Visualization
+        st.write("### Time to Afford Distribution")
+        if finite_times:
+            fig = px.histogram(
+                finite_times,
+                nbins=50,
+                title="Time to Afford Employee Distribution",
+                labels={"x": "Time to Afford (Months)", "y": "Frequency"}
+            )
+            st.plotly_chart(fig)
+        else:
+            st.write("No affordability achieved in the given time frame.")

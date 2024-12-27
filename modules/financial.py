@@ -103,18 +103,31 @@ def cost_projections():
 def cash_flow_analysis():
     """Cash Flow Analysis."""
     st.subheader("Cash Flow Analysis")
+
+    # Ensure required session state keys are initialized
+    if "calculated_revenue" not in st.session_state:
+        st.session_state["calculated_revenue"] = 0.0
+    if "calculated_costs" not in st.session_state:
+        st.session_state["calculated_costs"] = 0.0
+
+    # Input for opening balance
     opening_balance = st.number_input("Opening Balance (£)", 0.0, 100000.0, 1000.0)
+
+    # Calculate net profit and closing balance
     net_profit = st.session_state["calculated_revenue"] - st.session_state["calculated_costs"]
     closing_balance = opening_balance + net_profit
 
+    # Display results
     st.write(f"Opening Balance: £{opening_balance:,.2f}")
     st.write(f"Net Profit Impact: £{net_profit:,.2f}")
     st.write(f"Closing Balance: £{closing_balance:,.2f}")
 
+    # Visualization
     labels = ["Opening Balance", "Net Profit Impact", "Closing Balance"]
     values = [opening_balance, net_profit, closing_balance]
     fig = px.bar(x=labels, y=values, labels={"x": "Category", "y": "Amount (£)"}, title="Cash Flow Analysis")
     st.plotly_chart(fig)
+
 
 
 def profit_and_loss_projections():

@@ -8,7 +8,7 @@ def help_page():
     st.header("Overview")
     st.write("""
     The Business Forecasting Tool helps you analyze and plan various aspects of your business, including growth, financials, risks, and workforce strategies.
-    Use the sidebar to navigate through the modules and access the functionalities.
+    Use the sidebar to navigate through the modules and access their functionalities.
     """)
 
     # Section: Modules
@@ -19,24 +19,16 @@ def help_page():
     **Purpose**: Predict revenue, costs, and profits based on historical and projected data.
 
     **Features**:
-    - Revenue Projections: Forecast income based on growth rate and client numbers.
-    - Profit & Loss: Assess profitability by factoring in fixed and variable costs.
-    - Cash Flow Analysis: Analyze liquidity based on revenue, costs, and opening balance.
-    - Scenario Comparison: Compare different business scenarios side by side.
+    - Revenue Projections with Monte Carlo: Forecast income using probabilistic simulations based on growth rates and variability.
+    - Cost Projections: Analyze fixed and variable costs over a specified period.
+    - Cash Flow Analysis: Examine liquidity by factoring in revenue, costs, and opening balance.
+    - Profit & Loss Projections: Assess profitability, factoring in fixed, variable, and additional expenses.
+    - Scenario Comparison with Monte Carlo: Compare different business scenarios probabilistically.
 
-    **Formulas**:
-    - **Net Profit** = Revenue - (Fixed Costs + Variable Costs)
-    - **Cash Flow** = Opening Balance + Revenue - Costs
-    - **ROI** = (Revenue - Costs) / Costs × 100
-
-    **Example**:
-    - Input: Revenue = £50,000, Fixed Costs = £10,000, Variable Costs = £5,000.
-    - Output: **Net Profit** = £35,000.
-
-    **Explanation of Formulas**:
-    - **Net Profit**: Subtract total costs (fixed and variable) from revenue to get the net profit.
-    - **Cash Flow**: Cash flow is calculated by adding the revenue to the opening balance and subtracting the total costs.
-    - **ROI**: Measures return on investment by calculating the percentage return relative to the initial costs.
+    **Interpreting Monte Carlo Simulations**:
+    - Use the **Mean Trend** to guide planning (average projection).
+    - Review **Percentiles (5th and 95th)** for best- and worst-case bounds.
+    - Narrow percentiles = less variability; wide percentiles = higher uncertainty.
     """)
 
     st.subheader("2. Operational Planning")
@@ -47,18 +39,6 @@ def help_page():
     - Resource Allocation: Distribute resources efficiently across business operations.
     - Business Efficiency Metrics: Measure productivity and identify bottlenecks.
     - Technology Recommendations: Suggest cost-saving tools and technologies.
-
-    **Formulas**:
-    - **Productivity Rate** = (Output / Total Input) × 100
-    - **Efficiency Metric** = Sales per Employee
-
-    **Example**:
-    - Input: Employees = 10, Sales = 500.
-    - Output: **Productivity Rate** = 50 units per employee.
-
-    **Explanation of Formulas**:
-    - **Productivity Rate**: This formula measures how efficiently input resources (e.g., labor) are turned into output (e.g., products sold or services rendered).
-    - **Efficiency Metric**: This formula measures sales performance per employee, helping businesses assess employee efficiency.
     """)
 
     st.subheader("3. Risk Assessment")
@@ -68,19 +48,7 @@ def help_page():
     **Features**:
     - Define and analyze risks based on their likelihood and impact.
     - Visualize risks with charts and heatmaps.
-    - Prioritize risks for mitigation based on their scores.
-
-    **Formulas**:
-    - **Risk Score** = Likelihood (%) × Adjusted Impact (1-5)
-    - **Risk Factor**: Adjusts growth projections based on risk levels.
-
-    **Example**:
-    - Input: Risk = "Market Misalignment", Likelihood = 50%, Impact = 3.
-    - Output: **Risk Score** = 1.5, **Risk Factor** impacts growth rate.
-
-    **Explanation of Formulas**:
-    - **Risk Score**: The **Risk Score** is calculated by multiplying the likelihood (probability of the risk occurring) by the impact (the severity of the consequences). The formula helps prioritize risks by their severity.
-    - **Risk Factor**: The **Risk Factor** is calculated from the average **Risk Score** across selected risks, which then adjusts the **growth rate** in financial forecasting to reflect the influence of risks on the business.
+    - Adjust risk factors to influence Monte Carlo simulations.
     """)
 
     st.subheader("4. Growth & Scaling Strategy")
@@ -91,68 +59,75 @@ def help_page():
     - Market Expansion: Analyze ROI and the payback period for market entry.
     - Customer Metrics: Calculate Customer Lifetime Value (CLV) and Customer Acquisition Cost (CAC).
     - Partnerships: Assess the dependency and ROI for partnerships.
-
-    **Formulas**:
-    - **ROI** = (Revenue - Costs) / Costs × 100
-    - **CLV-to-CAC Ratio** = CLV / CAC
-
-    **Example**:
-    - Input: Market Costs = £50,000, Revenue = £100,000.
-    - Output: **ROI** = 100%.
-
-    **Explanation of Formulas**:
-    - **ROI (Return on Investment)**: This formula calculates the return you get for every pound spent on a particular investment (in this case, market expansion costs).
-    - **CLV-to-CAC Ratio**: The **CLV-to-CAC Ratio** helps determine how much value you’re generating for each pound spent on acquiring customers. A ratio greater than 1 suggests that customer acquisition is generating positive returns.
+    - Growth Path Analysis: Compare strategies like diversification, expansion, or pricing adjustments.
+    - Scenario Planning: Analyze Best Case, Most Likely, and Worst Case outcomes using Monte Carlo simulations.
+    - Risk-Adjusted Scaling: Evaluate scaling strategies with built-in risk metrics.
+    - Scaling Efficiency: Assess how well resources and costs are utilized during scaling.
     """)
 
-    st.subheader("5. Workforce Planning")
+    # Section: Monte Carlo Simulations
+    st.header("Monte Carlo Simulations")
     st.write("""
-    **Purpose**: Assess staffing needs, measure productivity, and calculate workforce costs.
+    Monte Carlo simulations provide probabilistic forecasts by modeling uncertainties in inputs like growth rates and costs.
 
-    **Features**:
-    - Calculate employee affordability based on salary and overheads.
-    - Measure workforce productivity across different departments.
+    **Key Metrics to Interpret**:
+    - **Mean ROI**: Average profitability across simulations. Higher values indicate better outcomes.
+    - **Risk-Adjusted ROI**: ROI adjusted for risk factors (e.g., market volatility, competition).
+    - **Breakeven Point**: Range of months needed to recover costs. Shorter ranges indicate quicker profitability.
 
-    **Formulas**:
-    - **Monthly Cost** = (Salary + Overheads) / 12
-    - **Revenue Increase Needed** = Monthly Cost / Productivity Rate
+    **Visualizing Risk-Adjusted Scores**:
+    - Box Plot:
+      - **Median**: The middle line in the box shows the central value of simulations.
+      - **Interquartile Range (IQR)**: The box shows the middle 50% of results (from 25th to 75th percentile).
+      - **Whiskers**: Represent variability in outcomes, excluding outliers.
+      - **Outliers**: Extreme points beyond typical outcomes.
 
-    **Example**:
-    - Input: Salary = £30,000, Overheads = £5,000, Productivity = 70%.
-    - Output: **Revenue Needed** = £3,750/month.
-
-    **Explanation of Formulas**:
-    - **Monthly Cost**: This formula calculates the total monthly cost of an employee by adding salary and overheads and dividing by 12.
-    - **Revenue Increase Needed**: This formula determines the amount of additional revenue needed to cover an employee's monthly costs based on their productivity.
+    **Practical Insights**:
+    - Narrow boxes and whiskers = more predictable outcomes.
+    - Wide boxes or whiskers = higher uncertainty.
     """)
 
-    # Section: FAQs
-    st.header("FAQs")
+    # Section: Interpreting Latest Changes
+    st.header("Interpreting Latest Changes")
     st.write("""
-    **Q: Can I save my data?**
-    - Yes, you can save your data from each module to a database, and it will be shared across the app for seamless analysis.
+    **Scenario Planning Enhancements**:
+    - Use the graph of Risk-Adjusted Score Distribution across scenarios to compare potential outcomes.
+    - Identify scenarios with:
+      - **Higher Medians**: Indicate better average performance.
+      - **Narrow Boxes and Whiskers**: Reflect less uncertainty and more consistent results.
+      - **Risk Tolerance**: Opt for scenarios with acceptable variability relative to your business goals.
 
-    **Q: What if I don't understand a metric?**
-    - Refer to the formulas and examples provided in each module for clarification.
+    **Growth Path Analysis**:
+    - Compare multiple strategies based on ROI, breakeven, and risk-adjusted growth.
+    - Use the grouped bar chart to visualize the differences in key metrics across strategies.
 
-    **Q: Can I compare scenarios across modules?**
-    - Yes, the tool allows for scenario testing and comparison across multiple modules for a more comprehensive analysis.
+    **Partnership Projections**:
+    - Assess dependency and risk-adjusted ROI to decide whether a partnership is viable.
+    - The bar chart for metrics (e.g., costs, revenue, ROI) helps identify areas for optimization.
+
+    **Risk-Adjusted Scaling**:
+    - Review scaling strategies by analyzing risk scores and risk-adjusted ROI.
+    - Focus on strategies with higher ROI and lower risk scores for sustainable growth.
+
+    **Scaling Efficiency**:
+    - Measure Revenue per Resource and Cost Scaling Factor to assess operational efficiency.
+    - Higher metrics indicate better resource utilization and cost management.
     """)
 
     # Section: Tips
     st.header("Tips")
     st.write("""
     - Regularly update inputs to keep projections accurate.
-    - Use scenario planning to test different strategies and mitigate risks.
-    - Leverage the Risk Factor to adjust growth projections based on real-time data.
+    - Use Scenario Comparison to evaluate the impact of different strategies.
+    - Adjust risk factors in the Risk Assessment module for a more realistic forecast.
     """)
 
     # Section: New Features
     st.header("New Features")
     st.write("""
-    - **Risk Factor Adjustment**: The Risk Factor now influences the growth rate in the Financial Forecasting module, providing more accurate projections under varying risk conditions.
-    - **Scenario Comparison**: You can now compare two different business scenarios side by side, assessing their revenue, costs, and profitability.
-    - **Database Integration**: Data is now exported and shared across all modules, ensuring consistency and reducing redundant calculations.
+    - **Monte Carlo Simulations**: Now integrated into Scenario Planning, Risk-Adjusted Scaling, and Scaling Efficiency.
+    - **Risk-Adjusted Metrics**: Evaluate ROI and efficiency while accounting for market and business risks.
+    - **Enhanced Visualizations**: Compare distributions and outcomes across multiple scenarios and strategies.
     """)
 
 if __name__ == "__main__":

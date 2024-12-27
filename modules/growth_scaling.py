@@ -1,4 +1,10 @@
-import streamlit as st
+﻿import streamlit as st
+import plotly.graph_objects as go
+import plotly.express as px  # Ensure Plotly Express is imported
+import numpy as np
+from modules.db_utils import save_to_database  # Ensure this function is implemented
+
+
 
 def growth_scaling():
     st.header("Growth & Scaling Strategy")
@@ -11,7 +17,8 @@ def growth_scaling():
         "Partnership Projections",
         "Growth Path Analysis",
         "Risk-Adjusted Scaling",
-        "Scaling Efficiency"
+        "Scaling Efficiency",
+        "Scenario Planning"
     ])
 
     # Load selected submodule
@@ -27,94 +34,111 @@ def growth_scaling():
         risk_adjusted_scaling()
     elif submenu == "Scaling Efficiency":
         scaling_efficiency()
+    elif submenu == "Scenario Planning":  # Link Scenario Planning
+        scenario_planning()
 
 # Submodule Functions
-import streamlit as st
-import plotly.express as px  # Ensure Plotly Express is imported
+
 
 def market_expansion():
-    st.subheader("Market Expansion")
+    st.subheader("Market Expansion with Monte Carlo")
     st.write("Analyze the feasibility and profitability of entering a new market.")
 
     # Step 1: Input Costs
     st.write("### Step 1: Market Entry Costs")
     marketing_costs = st.number_input(
-        "Marketing Costs (\u00A3)", min_value=0.0, step=100.0,
+        "Marketing Costs (£)", min_value=0.0, step=100.0,
         help="Estimated costs for campaigns, advertisements, and promotions."
     )
     infrastructure_costs = st.number_input(
-        "Infrastructure Costs (\u00A3)", min_value=0.0, step=100.0,
+        "Infrastructure Costs (£)", min_value=0.0, step=100.0,
         help="Costs for setting up infrastructure, equipment, or technology."
     )
     compliance_costs = st.number_input(
-        "Compliance/Legal Costs (\u00A3)", min_value=0.0, step=100.0,
+        "Compliance/Legal Costs (£)", min_value=0.0, step=100.0,
         help="Costs for meeting legal or regulatory requirements."
     )
     training_costs = st.number_input(
-        "Training/Staffing Costs (\u00A3)", min_value=0.0, step=100.0,
+        "Training/Staffing Costs (£)", min_value=0.0, step=100.0,
         help="Expenses for training or hiring staff."
     )
     total_entry_costs = marketing_costs + infrastructure_costs + compliance_costs + training_costs
 
-    st.write(f"**Total Market Entry Costs:** \u00A3{total_entry_costs:.2f}")
+    st.write(f"**Total Market Entry Costs:** £{total_entry_costs:.2f}")
 
     # Step 2: Revenue Potential
     st.write("### Step 2: Revenue Potential")
     average_revenue_per_customer = st.number_input(
-        "Average Revenue per Customer (\u00A3)", min_value=0.0, step=100.0,
+        "Average Revenue per Customer (£)", min_value=0.0, step=100.0,
         help="The average annual revenue per customer."
     )
     expected_customers = st.number_input(
         "Expected Number of Customers", min_value=0, step=1,
         help="The number of customers you expect to acquire in the new market."
     )
-    expected_revenue = average_revenue_per_customer * expected_customers
 
-    st.write(f"**Expected Annual Revenue:** \u00A3{expected_revenue:.2f}")
-
-    # Step 3: Market Characteristics
-    st.write("### Step 3: Market Characteristics")
-    market_saturation = st.slider(
-        "Market Saturation (%)", min_value=0, max_value=100, value=50,
-        help="Percentage of the market already served by competitors."
+    # Step 3: Variability Factors
+    st.write("### Step 3: Variability Factors")
+    revenue_variability = st.slider(
+        "Revenue Variability (%)", min_value=0, max_value=50, value=10,
+        help="Percentage variability in revenue assumptions."
     )
-    competition_intensity = st.slider(
-        "Competition Intensity (1-5)", min_value=1, max_value=5, value=3,
-        help="Level of competition, with 1 being low and 5 being high."
-    )
-    market_volatility = st.slider(
-        "Market Volatility (1-5)", min_value=1, max_value=5, value=2,
-        help="Unpredictability of the market, with 1 being stable and 5 being highly volatile."
+    cost_variability = st.slider(
+        "Cost Variability (%)", min_value=0, max_value=50, value=10,
+        help="Percentage variability in cost assumptions."
     )
 
-    # Step 4: Calculations
-    st.write("### Step 4: Advanced Metrics")
-    if total_entry_costs > 0:
-        roi = ((expected_revenue - total_entry_costs) / total_entry_costs) * 100
-        payback_period = total_entry_costs / (expected_revenue / 12) if expected_revenue > 0 else float('inf')
-        risk_score = ((market_saturation / 100) * competition_intensity * market_volatility)
+    # Monte Carlo Simulations
+    simulations = 1000
+    simulated_revenues = np.random.normal(
+        loc=average_revenue_per_customer * expected_customers,
+        scale=(revenue_variability / 100) * average_revenue_per_customer * expected_customers,
+        size=simulations
+    )
+    simulated_costs = np.random.normal(
+        loc=total_entry_costs,
+        scale=(cost_variability / 100) * total_entry_costs,
+        size=simulations
+    )
 
-        # Outputs
-        st.write(f"- **Return on Investment (ROI):** {roi:.2f}%")
-        st.write(f"- **Payback Period:** {payback_period:.2f} months")
-        st.write(f"- **Risk Score:** {risk_score:.2f} (higher = riskier)")
+    simulated_roi = ((simulated_revenues - simulated_costs) / simulated_costs) * 100
+    simulated_payback = np.where(simulated_revenues > 0, simulated_costs / (simulated_revenues / 12), float('inf'))
 
-        # Recommendations
-        if roi > 20 and risk_score < 3:
-            st.success("This market appears viable. Consider entering with a solid plan.")
-        elif risk_score >= 3:
-            st.warning("This market has significant risks. Reassess your strategy.")
-        else:
-            st.warning("This market may have low returns. Consider alternatives.")
+    # Calculate statistics
+    mean_roi = np.mean(simulated_roi)
+    p5_roi = np.percentile(simulated_roi, 5)
+    p95_roi = np.percentile(simulated_roi, 95)
 
-        # Visualization
-        metrics = ["Total Costs", "Expected Revenue", "ROI"]
-        values = [total_entry_costs, expected_revenue, roi]
-        fig = px.bar(x=metrics, y=values, labels={"x": "Metrics", "y": "Amount (\u00A3)"}, title="Market Expansion Metrics")
-        st.plotly_chart(fig)
+    mean_payback = np.mean(simulated_payback)
+    p5_payback = np.percentile(simulated_payback, 5)
+    p95_payback = np.percentile(simulated_payback, 95)
 
+    # Outputs
+    st.write("### Results")
+    st.write(f"- **Mean ROI:** {mean_roi:.2f}%")
+    st.write(f"- **ROI Range (5th to 95th Percentile):** {p5_roi:.2f}% to {p95_roi:.2f}%")
+    st.write(f"- **Mean Payback Period:** {mean_payback:.2f} months")
+    st.write(f"- **Payback Period Range (5th to 95th Percentile):** {p5_payback:.2f} to {p95_payback:.2f} months")
+
+    # Visualization: ROI Distribution
+    st.write("### ROI Distribution")
+    fig_roi = px.histogram(simulated_roi, nbins=50, title="ROI Distribution", labels={"x": "ROI (%)", "y": "Frequency"})
+    st.plotly_chart(fig_roi)
+
+    # Visualization: Payback Period Distribution
+    st.write("### Payback Period Distribution")
+    fig_payback = px.histogram(simulated_payback, nbins=50, title="Payback Period Distribution", labels={"x": "Payback Period (Months)", "y": "Frequency"})
+    st.plotly_chart(fig_payback)
+
+    # Recommendations
+    st.write("### Recommendations")
+    if mean_roi > 20 and p5_roi > 10 and mean_payback < 24:
+        st.success("This market appears viable. Proceed with a detailed market entry plan.")
+    elif mean_roi < 0 or mean_payback > 36:
+        st.warning("This market may not be profitable. Consider alternative opportunities.")
     else:
-        st.warning("Market entry costs must be greater than zero to calculate metrics.")
+        st.info("This market has moderate potential. Proceed with caution and further analysis.")
+
 
 
 def customer_metrics():
@@ -195,7 +219,7 @@ def customer_metrics():
 
 
 def partnership_projections():
-    st.subheader("Partnership Projections")
+    st.subheader("Partnership Projections with Monte Carlo")
     st.write("Evaluate the revenue contribution and ROI of potential partnerships.")
 
     # Step 1: Partnership Costs
@@ -227,59 +251,79 @@ def partnership_projections():
     )
     dependency_score = (partnership_revenue / total_business_revenue) * 100 if total_business_revenue > 0 else 0
 
-    # Step 4: Calculations
-    st.write("### Step 4: ROI and Risk Analysis")
-    if total_partnership_costs > 0:
-        partnership_roi = ((partnership_revenue - total_partnership_costs) / total_partnership_costs) * 100
-        st.write(f"- **Partnership ROI:** {partnership_roi:.2f}%")
-    else:
-        partnership_roi = 0
-        st.warning("Partnership costs must be greater than zero to calculate ROI.")
+    # Monte Carlo Simulations
+    st.write("### Monte Carlo Simulations")
+    simulations = 1000
 
-    st.write(f"- **Dependency Score:** {dependency_score:.2f}% (Percentage of revenue reliant on partnerships)")
-
-    # Risk Adjustment
-    partnership_risk = st.slider(
-        "Partnership Risk Factor (1-5)", min_value=1, max_value=5, value=3,
-        help="Evaluate the stability and risk associated with the partnership, with 1 being low risk and 5 being high risk."
+    # Simulate variability in costs and revenues
+    simulated_revenues = np.random.normal(
+        loc=partnership_revenue,
+        scale=partnership_revenue * 0.1,
+        size=simulations
     )
-    risk_adjusted_roi = partnership_roi - (partnership_risk * 5)
+    simulated_costs = np.random.normal(
+        loc=total_partnership_costs,
+        scale=total_partnership_costs * 0.1,
+        size=simulations
+    )
 
-    st.write(f"- **Risk-Adjusted ROI:** {risk_adjusted_roi:.2f}% (Accounting for partnership risks)")
+    # Calculate metrics
+    simulated_roi = ((simulated_revenues - simulated_costs) / simulated_costs) * 100
+    risk_adjusted_roi = simulated_roi - (dependency_score * 0.1)
+
+    # Summary statistics
+    mean_roi = np.mean(simulated_roi)
+    mean_risk_adjusted_roi = np.mean(risk_adjusted_roi)
+    p5_roi = np.percentile(simulated_roi, 5)
+    p95_roi = np.percentile(simulated_roi, 95)
+
+    st.write(f"- **Mean ROI:** {mean_roi:.2f}%")
+    st.write(f"- **ROI Range (5th to 95th Percentile):** {p5_roi:.2f}% to {p95_roi:.2f}%")
+    st.write(f"- **Mean Risk-Adjusted ROI:** {mean_risk_adjusted_roi:.2f}%")
+
+    # Visualization: ROI Distribution
+    st.write("### ROI Distribution")
+    fig_roi = px.histogram(
+        simulated_roi,
+        nbins=50,
+        title="ROI Distribution",
+        labels={"x": "ROI (%)", "y": "Frequency"}
+    )
+    st.plotly_chart(fig_roi)
+
+    # Visualization: Risk-Adjusted ROI Distribution
+    st.write("### Risk-Adjusted ROI Distribution")
+    fig_risk_adjusted = px.histogram(
+        risk_adjusted_roi,
+        nbins=50,
+        title="Risk-Adjusted ROI Distribution",
+        labels={"x": "Risk-Adjusted ROI (%)", "y": "Frequency"}
+    )
+    st.plotly_chart(fig_risk_adjusted)
 
     # Recommendations
     st.write("### Recommendations")
-    if partnership_roi > 20 and risk_adjusted_roi > 15 and dependency_score < 30:
+    if mean_roi > 20 and mean_risk_adjusted_roi > 15 and dependency_score < 30:
         st.success("This partnership appears profitable and sustainable. Proceed with confidence.")
-    elif risk_adjusted_roi <= 15:
+    elif mean_risk_adjusted_roi <= 15:
         st.warning("This partnership poses significant risks. Evaluate alternatives.")
     elif dependency_score >= 30:
         st.warning("High dependency on partnerships detected. Diversify your revenue streams.")
 
-    # Visualization
-    st.write("### Visualization")
-    metrics = ["Costs", "Revenue", "ROI", "Risk-Adjusted ROI"]
-    values = [total_partnership_costs, partnership_revenue, partnership_roi, risk_adjusted_roi]
-    fig = px.bar(x=metrics, y=values, title="Partnership Metrics Overview", labels={"x": "Metrics", "y": "Amount (\u00A3)"})
-    st.plotly_chart(fig)
-
     # Save Results
+    st.write("### Save Results")
     if st.button("Save Partnership Metrics"):
         st.session_state["partnership_metrics"] = {
-            "Total Costs": total_partnership_costs,
-            "Revenue": partnership_revenue,
-            "ROI": partnership_roi,
-            "Risk-Adjusted ROI": risk_adjusted_roi,
+            "Mean ROI": mean_roi,
+            "ROI Range": (p5_roi, p95_roi),
+            "Mean Risk-Adjusted ROI": mean_risk_adjusted_roi,
             "Dependency Score": dependency_score
         }
         st.success("Partnership metrics saved!")
 
 
-import streamlit as st
-import plotly.graph_objects as go
-
 def growth_path_analysis():
-    st.subheader("Growth Path Analysis")
+    st.subheader("Growth Path Analysis with Monte Carlo")
     st.write("Analyze and compare different strategies to identify the best growth path.")
 
     # Step 1: Define Growth Strategies
@@ -318,24 +362,72 @@ def growth_path_analysis():
         help="Perceived risk level of the strategy, with 1 being low risk and 5 being high risk."
     )
 
-    # Step 2: Calculate Metrics
-    st.write("### Step 2: Calculate Metrics")
-    if strategy_costs > 0:
-        strategy_roi = ((expected_revenue_growth * strategy_costs / 100) - strategy_costs) / strategy_costs * 100
-        breakeven_point = strategy_costs / ((expected_revenue_growth * strategy_costs / 100) / strategy_timeline) if expected_revenue_growth > 0 else float('inf')
-        risk_adjusted_growth = strategy_roi - (strategy_risk * 5)
+    # Step 2: Monte Carlo Simulations
+    st.write("### Step 2: Monte Carlo Simulations")
+    simulations = 1000
 
-        st.write(f"- **Return on Investment (ROI):** {strategy_roi:.2f}%")
-        st.write(f"- **Breakeven Point:** {breakeven_point:.2f} months")
-        st.write(f"- **Risk-Adjusted Growth Score:** {risk_adjusted_growth:.2f}")
-    else:
-        st.warning("Strategy costs must be greater than zero to calculate metrics.")
-        strategy_roi = 0
-        breakeven_point = 0
-        risk_adjusted_growth = 0
+    # Simulate variability in revenue growth and costs
+    simulated_revenue_growth = np.random.normal(
+        loc=expected_revenue_growth,
+        scale=expected_revenue_growth * 0.1,
+        size=simulations
+    )
+    simulated_costs = np.random.normal(
+        loc=strategy_costs,
+        scale=strategy_costs * 0.1,
+        size=simulations
+    )
 
-    # Step 3: Compare Strategies
-    st.write("### Step 3: Compare Strategies")
+    # Calculate simulated metrics
+    simulated_roi = ((simulated_revenue_growth * simulated_costs / 100) - simulated_costs) / simulated_costs * 100
+    simulated_breakeven = np.where(
+        simulated_revenue_growth > 0,
+        simulated_costs / ((simulated_revenue_growth * simulated_costs / 100) / strategy_timeline),
+        float('inf')
+    )
+    simulated_risk_adjusted_growth = simulated_roi - (strategy_risk * 5)
+
+    # Summary statistics
+    mean_roi = np.mean(simulated_roi)
+    mean_breakeven = np.mean(simulated_breakeven)
+    mean_risk_adjusted_growth = np.mean(simulated_risk_adjusted_growth)
+
+    st.write(f"- **Mean ROI:** {mean_roi:.2f}%")
+    st.write(f"- **Mean Breakeven Point:** {mean_breakeven:.2f} months")
+    st.write(f"- **Mean Risk-Adjusted Growth:** {mean_risk_adjusted_growth:.2f}%")
+
+    # Step 3: Visualizations
+    st.write("### Visualizations")
+    
+    # ROI Distribution
+    fig_roi = px.histogram(
+        simulated_roi,
+        nbins=50,
+        title="ROI Distribution",
+        labels={"x": "ROI (%)", "y": "Frequency"}
+    )
+    st.plotly_chart(fig_roi)
+
+    # Breakeven Distribution
+    fig_breakeven = px.histogram(
+        simulated_breakeven,
+        nbins=50,
+        title="Breakeven Point Distribution",
+        labels={"x": "Breakeven Point (Months)", "y": "Frequency"}
+    )
+    st.plotly_chart(fig_breakeven)
+
+    # Risk-Adjusted Growth Distribution
+    fig_risk_adjusted = px.histogram(
+        simulated_risk_adjusted_growth,
+        nbins=50,
+        title="Risk-Adjusted Growth Distribution",
+        labels={"x": "Risk-Adjusted Growth (%)", "y": "Frequency"}
+    )
+    st.plotly_chart(fig_risk_adjusted)
+
+    # Step 4: Add Strategy and Compare
+    st.write("### Compare Strategies")
     if "strategies" not in st.session_state:
         st.session_state["strategies"] = []
 
@@ -344,47 +436,43 @@ def growth_path_analysis():
         if new_strategy_name:
             st.session_state["strategies"].append({
                 "Name": new_strategy_name,
-                "ROI": strategy_roi,
-                "Risk-Adjusted Growth": risk_adjusted_growth,
-                "Breakeven Point": breakeven_point,
+                "Mean ROI": mean_roi,
+                "Mean Breakeven": mean_breakeven,
+                "Mean Risk-Adjusted Growth": mean_risk_adjusted_growth
             })
             st.success(f"Strategy '{new_strategy_name}' added!")
 
+    # Display saved strategies
     if st.session_state["strategies"]:
         st.write("### Saved Strategies")
         for strategy in st.session_state["strategies"]:
-            st.write(f"- **Name:** {strategy['Name']}, **ROI:** {strategy['ROI']:.2f}%, "
-                     f"**Risk-Adjusted Growth:** {strategy['Risk-Adjusted Growth']:.2f}, "
-                     f"**Breakeven Point:** {strategy['Breakeven Point']:.2f} months")
+            st.write(f"- **{strategy['Name']}**: ROI = {strategy['Mean ROI']:.2f}%, "
+                     f"Breakeven = {strategy['Mean Breakeven']:.2f} months, "
+                     f"Risk-Adjusted Growth = {strategy['Mean Risk-Adjusted Growth']:.2f}%")
 
-    # Visualization
-    st.write("### Visualization")
+    # Comparative Visualization
     if st.session_state["strategies"]:
-        names = [strategy["Name"] for strategy in st.session_state["strategies"]]
-        rois = [strategy["ROI"] for strategy in st.session_state["strategies"]]
-        risk_adjusted_growths = [strategy["Risk-Adjusted Growth"] for strategy in st.session_state["strategies"]]
+        names = [s["Name"] for s in st.session_state["strategies"]]
+        rois = [s["Mean ROI"] for s in st.session_state["strategies"]]
+        risk_adjusted = [s["Mean Risk-Adjusted Growth"] for s in st.session_state["strategies"]]
 
-        fig = go.Figure()
-        fig.add_trace(go.Bar(name="ROI", x=names, y=rois))
-        fig.add_trace(go.Bar(name="Risk-Adjusted Growth", x=names, y=risk_adjusted_growths))
-        fig.update_layout(barmode="group", title="Comparison of Strategies", xaxis_title="Strategies", yaxis_title="Values")
-        st.plotly_chart(fig)
-
-    # Save Results
-    st.write("### Save Results")
-    if st.button("Save All Strategies", key="save_all_strategies"):
-        st.success("All strategies saved successfully!")
+        fig_comparison = go.Figure()
+        fig_comparison.add_trace(go.Bar(name="ROI", x=names, y=rois))
+        fig_comparison.add_trace(go.Bar(name="Risk-Adjusted Growth", x=names, y=risk_adjusted))
+        fig_comparison.update_layout(barmode="group", title="Comparison of Strategies", xaxis_title="Strategies", yaxis_title="Values")
+        st.plotly_chart(fig_comparison)
 
 
-import streamlit as st
-import plotly.graph_objects as go
+
+
+
 
 def scenario_planning():
-    st.subheader("Scenario Planning")
+
+    st.subheader("Scenario Planning with Monte Carlo")
     st.write("Simulate and compare outcomes for best-case, worst-case, and most-likely scenarios.")
 
     # Step 1: Define Scenarios
-    st.write("### Step 1: Define Scenarios")
     scenarios = ["Best Case", "Most Likely", "Worst Case"]
 
     revenue_assumptions = {}
@@ -406,70 +494,64 @@ def scenario_planning():
             help=f"Assess the risk level for the {scenario.lower()} scenario."
         )
 
-    # Step 2: Calculate Metrics
-    st.write("### Step 2: Calculate Metrics")
-    metrics = {"Scenario": [], "ROI (%)": [], "Breakeven Point (Months)": [], "Risk-Adjusted Score": []}
+    # Step 2: Monte Carlo Simulations
+    simulations = 1000
+    results = {"Scenario": [], "ROI": [], "Breakeven Point": [], "Risk-Adjusted Score": []}
 
     for scenario in scenarios:
         revenue = revenue_assumptions[scenario]
-        costs = cost_assumptions[scenario]
+        cost = cost_assumptions[scenario]
         risk = risk_levels[scenario]
 
-        if costs > 0:
-            roi = ((revenue - costs) / costs) * 100
-            breakeven_point = costs / (revenue / 12) if revenue > 0 else float('inf')
-            risk_adjusted_score = roi - (risk * 5)
+        if cost > 0:
+            # Simulate variability
+            simulated_revenues = np.random.normal(loc=revenue, scale=revenue * 0.1, size=simulations)
+            simulated_costs = np.random.normal(loc=cost, scale=cost * 0.1, size=simulations)
+
+            # Calculate metrics
+            simulated_roi = ((simulated_revenues - simulated_costs) / simulated_costs) * 100
+            simulated_breakeven = np.where(simulated_revenues > 0, simulated_costs / (simulated_revenues / 12), float('inf'))
+            simulated_risk_adjusted = simulated_roi - (risk * 5)
+
+            # Store results
+            results["Scenario"].append(scenario)
+            results["ROI"].extend(simulated_roi)
+            results["Breakeven Point"].extend(simulated_breakeven)
+            results["Risk-Adjusted Score"].extend(simulated_risk_adjusted)
+
+            # Display summary statistics
+            st.write(f"### {scenario} Scenario Results")
+            st.write(f"- Mean ROI: {np.mean(simulated_roi):.2f}%")
+            st.write(f"- Breakeven Point Range: {np.percentile(simulated_breakeven, 5):.2f} to {np.percentile(simulated_breakeven, 95):.2f} months")
+            st.write(f"- Risk-Adjusted ROI Range: {np.percentile(simulated_risk_adjusted, 5):.2f}% to {np.percentile(simulated_risk_adjusted, 95):.2f}%")
         else:
-            roi = 0
-            breakeven_point = float('inf')
-            risk_adjusted_score = 0
-
-        metrics["Scenario"].append(scenario)
-        metrics["ROI (%)"].append(roi)
-        metrics["Breakeven Point (Months)"].append(breakeven_point)
-        metrics["Risk-Adjusted Score"].append(risk_adjusted_score)
-
-        st.write(f"#### {scenario} Scenario Results")
-        st.write(f"- **ROI:** {roi:.2f}%")
-        st.write(f"- **Breakeven Point:** {breakeven_point:.2f} months")
-        st.write(f"- **Risk-Adjusted Score:** {risk_adjusted_score:.2f}")
+            st.warning(f"Costs must be greater than zero for {scenario} to calculate metrics.")
 
     # Step 3: Visualization
-    st.write("### Step 3: Visualization")
+    st.write("### Visualization")
     fig = go.Figure()
-    fig.add_trace(go.Bar(name="ROI (%)", x=metrics["Scenario"], y=metrics["ROI (%)"]))
-    fig.add_trace(go.Bar(name="Risk-Adjusted Score", x=metrics["Scenario"], y=metrics["Risk-Adjusted Score"]))
-    fig.update_layout(barmode="group", title="Scenario Comparison", xaxis_title="Scenario", yaxis_title="Values")
+    for scenario in scenarios:
+        fig.add_trace(go.Box(
+            y=results["Risk-Adjusted Score"],
+            name=f"{scenario} Risk-Adjusted",
+            boxmean=True
+        ))
+    fig.update_layout(title="Risk-Adjusted Score Distribution Across Scenarios", xaxis_title="Scenarios", yaxis_title="Risk-Adjusted Score (%)")
     st.plotly_chart(fig)
-
-    # Step 4: Recommendations
-    st.write("### Step 4: Recommendations")
-    best_scenario = max(metrics["Risk-Adjusted Score"], default=0)
-    if best_scenario > 0:
-        best_index = metrics["Risk-Adjusted Score"].index(best_scenario)
-        best_name = metrics["Scenario"][best_index]
-        st.success(f"The recommended strategy is the **{best_name} Scenario** based on the highest risk-adjusted score.")
-    else:
-        st.warning("No scenario is showing a strong advantage. Reassess your inputs.")
 
     # Save Results
     st.write("### Save Results")
     if st.button("Save Scenario Results"):
-        st.session_state["scenario_results"] = metrics
+        st.session_state["scenario_results"] = results
         st.success("Scenario results saved!")
 
-    if "scenario_results" in st.session_state:
-        st.write("Saved Results:", st.session_state["scenario_results"])
-        st.download_button(
-            label="Download Results as JSON",
-            data=str(st.session_state["scenario_results"]),
-            file_name="scenario_results.json"
-        )
 
-
+import streamlit as st
+import numpy as np
+import plotly.express as px
 
 def risk_adjusted_scaling():
-    st.subheader("Risk-Adjusted Scaling")
+    st.subheader("Risk-Adjusted Scaling with Monte Carlo")
     st.write("Analyze and integrate risk metrics into your scaling strategy.")
 
     # Step 1: Input Risk Factors
@@ -495,36 +577,90 @@ def risk_adjusted_scaling():
         help="Costs associated with scaling operations."
     )
 
-    # Step 2: Calculate Risk-Adjusted Metrics
-    st.write("### Step 2: Risk-Adjusted Metrics")
-    risk_score = ((market_saturation / 100) * competition_intensity * market_volatility)
-    if scaling_costs > 0:
-        risk_adjusted_roi = ((revenue_growth - risk_score) / scaling_costs) * 100
-    else:
-        risk_adjusted_roi = 0
+    # Step 2: Monte Carlo Simulations
+    st.write("### Step 2: Monte Carlo Simulations")
+    simulations = 1000
 
-    st.write(f"- **Risk Score:** {risk_score:.2f} (Higher = riskier)")
-    st.write(f"- **Risk-Adjusted ROI:** {risk_adjusted_roi:.2f}%")
+    # Simulate variability in risk factors
+    simulated_market_saturation = np.random.normal(
+        loc=market_saturation,
+        scale=market_saturation * 0.1,
+        size=simulations
+    )
+    simulated_competition_intensity = np.random.normal(
+        loc=competition_intensity,
+        scale=competition_intensity * 0.1,
+        size=simulations
+    )
+    simulated_market_volatility = np.random.normal(
+        loc=market_volatility,
+        scale=market_volatility * 0.1,
+        size=simulations
+    )
+    simulated_revenue_growth = np.random.normal(
+        loc=revenue_growth,
+        scale=revenue_growth * 0.1,
+        size=simulations
+    )
+    simulated_scaling_costs = np.random.normal(
+        loc=scaling_costs,
+        scale=scaling_costs * 0.1,
+        size=simulations
+    )
 
-    # Step 3: Recommendations
+    # Calculate Risk Scores and Risk-Adjusted ROI
+    simulated_risk_scores = (
+        simulated_market_saturation / 100
+    ) * simulated_competition_intensity * simulated_market_volatility
+    simulated_risk_adjusted_roi = (
+        (simulated_revenue_growth - simulated_risk_scores) / simulated_scaling_costs
+    ) * 100
+
+    # Summary statistics
+    mean_risk_score = np.mean(simulated_risk_scores)
+    mean_risk_adjusted_roi = np.mean(simulated_risk_adjusted_roi)
+    p5_risk_adjusted_roi = np.percentile(simulated_risk_adjusted_roi, 5)
+    p95_risk_adjusted_roi = np.percentile(simulated_risk_adjusted_roi, 95)
+
+    st.write(f"- **Mean Risk Score:** {mean_risk_score:.2f} (Higher = riskier)")
+    st.write(f"- **Mean Risk-Adjusted ROI:** {mean_risk_adjusted_roi:.2f}%")
+    st.write(f"- **Risk-Adjusted ROI Range (5th to 95th Percentile):** {p5_risk_adjusted_roi:.2f}% to {p95_risk_adjusted_roi:.2f}%")
+
+    # Step 3: Visualizations
+    st.write("### Visualizations")
+
+    # Risk Score Distribution
+    fig_risk_score = px.histogram(
+        simulated_risk_scores,
+        nbins=50,
+        title="Risk Score Distribution",
+        labels={"x": "Risk Score", "y": "Frequency"}
+    )
+    st.plotly_chart(fig_risk_score)
+
+    # Risk-Adjusted ROI Distribution
+    fig_risk_adjusted_roi = px.histogram(
+        simulated_risk_adjusted_roi,
+        nbins=50,
+        title="Risk-Adjusted ROI Distribution",
+        labels={"x": "Risk-Adjusted ROI (%)", "y": "Frequency"}
+    )
+    st.plotly_chart(fig_risk_adjusted_roi)
+
+    # Recommendations
     st.write("### Recommendations")
-    if risk_adjusted_roi > 20 and risk_score < 3:
+    if mean_risk_adjusted_roi > 20 and mean_risk_score < 3:
         st.success("This scaling strategy appears low risk and profitable. Consider proceeding.")
-    elif risk_score >= 3:
+    elif mean_risk_score >= 3:
         st.warning("This scaling strategy has significant risks. Consider mitigating risks before proceeding.")
     else:
         st.warning("This scaling strategy may not be profitable. Reassess your approach.")
 
-    # Visualization
-    st.write("### Visualization")
-    metrics = ["Risk Score", "Risk-Adjusted ROI"]
-    values = [risk_score, risk_adjusted_roi]
-    fig = px.bar(x=metrics, y=values, title="Risk-Adjusted Scaling Metrics", labels={"x": "Metrics", "y": "Values"})
-    st.plotly_chart(fig)
+
 
 
 def scaling_efficiency():
-    st.subheader("Scaling Efficiency")
+    st.subheader("Scaling Efficiency with Monte Carlo")
     st.write("Assess the efficiency and sustainability of your scaling strategy.")
 
     # Step 1: Input Efficiency Metrics
@@ -542,35 +678,81 @@ def scaling_efficiency():
         help="Costs associated with scaling operations."
     )
 
-    # Step 2: Calculate Efficiency Metrics
-    st.write("### Step 2: Efficiency Metrics")
-    if scaling_resources > 0:
-        revenue_per_resource = revenue / scaling_resources
-    else:
-        revenue_per_resource = 0
+    # Step 2: Monte Carlo Simulations
+    st.write("### Step 2: Monte Carlo Simulations")
+    simulations = 1000
 
-    if scaling_costs > 0:
-        cost_scaling_factor = revenue / scaling_costs
-    else:
-        cost_scaling_factor = 0
+    # Simulate variability in inputs
+    simulated_revenue = np.random.normal(
+        loc=revenue,
+        scale=revenue * 0.1,
+        size=simulations
+    )
+    simulated_scaling_resources = np.random.normal(
+        loc=scaling_resources,
+        scale=scaling_resources * 0.1,
+        size=simulations
+    )
+    simulated_scaling_costs = np.random.normal(
+        loc=scaling_costs,
+        scale=scaling_costs * 0.1,
+        size=simulations
+    )
 
-    st.write(f"- **Revenue per Resource:** \u00A3{revenue_per_resource:.2f}")
-    st.write(f"- **Cost Scaling Factor:** {cost_scaling_factor:.2f} (Higher is better)")
+    # Calculate metrics
+    simulated_revenue_per_resource = np.where(
+        simulated_scaling_resources > 0,
+        simulated_revenue / simulated_scaling_resources,
+        0
+    )
+    simulated_cost_scaling_factor = np.where(
+        simulated_scaling_costs > 0,
+        simulated_revenue / simulated_scaling_costs,
+        0
+    )
 
-    # Step 3: Recommendations
+    # Summary statistics
+    mean_revenue_per_resource = np.mean(simulated_revenue_per_resource)
+    mean_cost_scaling_factor = np.mean(simulated_cost_scaling_factor)
+    p5_revenue_per_resource = np.percentile(simulated_revenue_per_resource, 5)
+    p95_revenue_per_resource = np.percentile(simulated_revenue_per_resource, 95)
+    p5_cost_scaling_factor = np.percentile(simulated_cost_scaling_factor, 5)
+    p95_cost_scaling_factor = np.percentile(simulated_cost_scaling_factor, 95)
+
+    st.write(f"- **Mean Revenue per Resource:** \u00A3{mean_revenue_per_resource:.2f}")
+    st.write(f"- **Revenue per Resource Range (5th to 95th Percentile):** \u00A3{p5_revenue_per_resource:.2f} to \u00A3{p95_revenue_per_resource:.2f}")
+    st.write(f"- **Mean Cost Scaling Factor:** {mean_cost_scaling_factor:.2f}")
+    st.write(f"- **Cost Scaling Factor Range (5th to 95th Percentile):** {p5_cost_scaling_factor:.2f} to {p95_cost_scaling_factor:.2f}")
+
+    # Step 3: Visualizations
+    st.write("### Visualizations")
+
+    # Revenue per Resource Distribution
+    fig_revenue_per_resource = px.histogram(
+        simulated_revenue_per_resource,
+        nbins=50,
+        title="Revenue per Resource Distribution",
+        labels={"x": "Revenue per Resource (\u00A3)", "y": "Frequency"}
+    )
+    st.plotly_chart(fig_revenue_per_resource)
+
+    # Cost Scaling Factor Distribution
+    fig_cost_scaling_factor = px.histogram(
+        simulated_cost_scaling_factor,
+        nbins=50,
+        title="Cost Scaling Factor Distribution",
+        labels={"x": "Cost Scaling Factor", "y": "Frequency"}
+    )
+    st.plotly_chart(fig_cost_scaling_factor)
+
+    # Recommendations
     st.write("### Recommendations")
-    if cost_scaling_factor > 2 and revenue_per_resource > 5000:
+    if mean_cost_scaling_factor > 2 and mean_revenue_per_resource > 5000:
         st.success("Your scaling strategy is efficient and sustainable. Keep scaling!")
-    elif cost_scaling_factor > 1:
+    elif mean_cost_scaling_factor > 1:
         st.info("Your scaling strategy is acceptable, but there's room for improvement.")
     else:
         st.warning("Your scaling strategy is inefficient. Reassess your resources and costs.")
 
-    # Visualization
-    st.write("### Visualization")
-    metrics = ["Revenue per Resource", "Cost Scaling Factor"]
-    values = [revenue_per_resource, cost_scaling_factor]
-    fig = px.bar(x=metrics, y=values, title="Scaling Efficiency Metrics", labels={"x": "Metrics", "y": "Values"})
-    st.plotly_chart(fig)
 
 

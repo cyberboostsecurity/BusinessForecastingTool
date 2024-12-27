@@ -1,61 +1,108 @@
 ﻿import streamlit as st
-import plotly.express as px  # For advanced visualizations
+import plotly.express as px
+import pandas as pd
 
-# Dashboard module
+# Dashboard Function
 def dashboard():
-    st.header("Dashboard")
-    st.info("Visualize and manage metrics from all modules.")
+    st.title("Business Forecasting Dashboard")
+    st.info("Get a comprehensive overview of your business performance metrics.")
 
-    # Example Summary Statistics
-    st.write("### Summary Statistics")
-    summary_data = {
-        "Financial Forecasting": {"Revenue Projection": "£50,000", "Profit Margin": "25%"},
-        "Operational Planning": {"Resource Utilization": "80%", "Efficiency Rating": "4.5/5"},
-        "Risk Assessment": {"Highest Risk": "Market Misalignment", "Risk Score": "1.2"},
-        "Growth & Scaling": {"ROI": "30%", "Viability Index": "4.8"},
-        "Workforce": {"Total Staffing Costs": "£20,000", "Employee Affordability": "Achieved"},
-    }
-    for module, metrics in summary_data.items():
-        st.subheader(module)
-        for metric, value in metrics.items():
-            st.write(f"- **{metric}:** {value}")
+    # Tabs for different sections
+    tab1, tab2, tab3, tab4 = st.tabs([
+        "Financial Overview", "Workforce Overview", "Growth & Scaling", "Risk Assessment"])
 
-    # Example Visualizations
-    st.write("### Visualizations")
+    # Financial Overview
+    with tab1:
+        st.subheader("Financial Overview")
 
-    # Example: Financial Forecasting Metrics
-    st.subheader("Financial Forecasting Metrics")
-    financial_data = {"Month": ["Jan", "Feb", "Mar"], "Revenue": [10000, 15000, 20000]}
-    fig = px.line(financial_data, x="Month", y="Revenue", title="Monthly Revenue Projection")
-    st.plotly_chart(fig)
+        # Check if financial data is available
+        if "financial_metrics" in st.session_state:
+            financial_data = st.session_state["financial_metrics"]
+            
+            # Display metrics
+            st.metric("Total Revenue", f"\u00A3{financial_data['total_revenue']:.2f}")
+            st.metric("Total Costs", f"\u00A3{financial_data['total_costs']:.2f}")
+            st.metric("Profit/Loss", f"\u00A3{financial_data['profit_loss']:.2f}")
 
-    # Example: Operational Planning Metrics
-    st.subheader("Operational Planning Metrics")
-    operational_data = {"Resource": ["Sales", "IT", "Marketing"], "Utilization (%)": [85, 90, 75]}
-    fig = px.bar(operational_data, x="Resource", y="Utilization (%)", title="Resource Utilization")
-    st.plotly_chart(fig)
+            # Visualization: Revenue vs Costs
+            fig = px.bar(
+                x=["Revenue", "Costs"],
+                y=[financial_data['total_revenue'], financial_data['total_costs']],
+                labels={"x": "Category", "y": "Amount"},
+                title="Revenue vs Costs"
+            )
+            st.plotly_chart(fig)
+        else:
+            st.warning("No financial data available. Please complete the Financial Forecasting module.")
 
-    # Example: Risk Assessment Heatmap
-    st.subheader("Risk Assessment Heatmap")
-    risks = ["Risk A", "Risk B", "Risk C"]
-    likelihood = [30, 60, 80]
-    impact = [2, 4, 3]
-    fig = px.scatter(
-        x=likelihood, y=impact, text=risks,
-        size=[i * j for i, j in zip(likelihood, impact)],
-        title="Risk Heatmap",
-        labels={"x": "Likelihood (%)", "y": "Impact"}
-    )
-    st.plotly_chart(fig)
+    # Workforce Overview
+    with tab2:
+        st.subheader("Workforce Overview")
 
-    # Recommendations Section
-    st.write("### Recommendations")
-    st.success("Focus on increasing marketing efforts in March to maximize ROI.")
-    st.warning("Resource utilization in Marketing is below 80%. Consider reallocation.")
-    st.error("Risk Assessment indicates a critical issue with 'Risk C'. Mitigate immediately.")
+        # Check if workforce data is available
+        if "workforce_metrics" in st.session_state:
+            workforce_data = st.session_state["workforce_metrics"]
 
-    # Save Results Option
-    st.write("### Save Results")
-    if st.button("Export Dashboard Data"):
-        # Placeholder for export functionality
-        st.info("Dashboard data exported successfully.")
+            # Display metrics
+            st.metric("Total Staffing Costs", f"\u00A3{workforce_data['total_staffing_costs']:.2f}")
+            st.metric("Average Revenue per Employee", f"\u00A3{workforce_data['revenue_per_employee']:.2f}")
+
+            # Visualization: Staffing Cost Breakdown
+            fig = px.pie(
+                names=workforce_data['cost_categories'],
+                values=workforce_data['cost_values'],
+                title="Staffing Cost Breakdown"
+            )
+            st.plotly_chart(fig)
+        else:
+            st.warning("No workforce data available. Please complete the Workforce Planning module.")
+
+    # Growth & Scaling Overview
+    with tab3:
+        st.subheader("Growth & Scaling Overview")
+
+        # Check if growth data is available
+        if "growth_metrics" in st.session_state:
+            growth_data = st.session_state["growth_metrics"]
+
+            # Display metrics
+            st.metric("Average ROI", f"{growth_data['average_roi']:.2f}%")
+            st.metric("Payback Period", f"{growth_data['payback_period']:.2f} months")
+
+            # Visualization: ROI Distribution
+            fig = px.histogram(
+                growth_data['roi_distribution'],
+                title="ROI Distribution",
+                labels={"value": "ROI (%)", "count": "Frequency"}
+            )
+            st.plotly_chart(fig)
+        else:
+            st.warning("No growth data available. Please complete the Growth & Scaling module.")
+
+    # Risk Assessment Overview
+    with tab4:
+        st.subheader("Risk Assessment Overview")
+
+        # Check if risk data is available
+        if "risk_metrics" in st.session_state:
+            risk_data = st.session_state["risk_metrics"]
+
+            # Display metrics
+            st.metric("Overall Risk Score", f"{risk_data['overall_risk_score']:.2f}")
+            st.metric("Mitigated Risks", f"{risk_data['mitigated_risks']}")
+            st.metric("Unmitigated Risks", f"{risk_data['unmitigated_risks']}")
+
+            # Visualization: Risk Breakdown
+            fig = px.bar(
+                x=risk_data['risk_categories'],
+                y=risk_data['risk_values'],
+                labels={"x": "Risk Category", "y": "Risk Score"},
+                title="Risk Breakdown"
+            )
+            st.plotly_chart(fig)
+        else:
+            st.warning("No risk data available. Please complete the Risk Assessment module.")
+
+# Test the Dashboard function (Uncomment to test locally)
+# if __name__ == "__main__":
+#     dashboard()

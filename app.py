@@ -19,14 +19,14 @@ selected_module = st.sidebar.radio(
     "Select a Module",
     [
         "Home",
-        "Dashboard",  # Dashboard is now in its separate module
-        "Financial Forecasting",
-        "Operational Planning",
+        "Help",
         "Risk Assessment",
+        "Financial Forecasting",
+        "Workforce and Culture Projections",            
         "Growth & Scaling Strategy",
-        "Investment and Financing Needs",
-        "Workforce and Culture Projections",
-        "Help"
+        "Operational Planning",
+        "Investment and Financing Needs",        
+        "Dashboard",
     ]
 )
 

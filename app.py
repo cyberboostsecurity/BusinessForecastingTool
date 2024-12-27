@@ -7,8 +7,8 @@ from modules.investment_financing import investment_financing
 from modules.workforce import workforce_projections
 from modules.help import help_page
 from modules.dashboard import dashboard  # Directly import the function
-from modules.db_utils import save_to_database, load_from_database, clear_data
-
+from modules.db_utils import clear_data
+import os
 
 # Navigation
 st.title("Business Forecasting Tool")
@@ -38,6 +38,11 @@ if selected_module == "Home":
         including financial projections, operational planning, risk assessment, growth, and workforce planning.
         Use the sidebar to navigate between modules.
     """)
+    image_path = "path_to_homepage_image.jpg"  # Update with your image path
+    if os.path.exists(image_path):
+        st.image(image_path, use_container_width=True)
+    else:
+        st.warning("Image not found. Please check the file path.")
 
 # Dashboard Module
 elif selected_module == "Dashboard":
@@ -45,7 +50,10 @@ elif selected_module == "Dashboard":
 
 # Financial Forecasting Module
 elif selected_module == "Financial Forecasting":
-    financial_forecasting()
+    try:
+        financial_forecasting()
+    except Exception as e:
+        st.error(f"An error occurred in Financial Forecasting: {e}")
 
 # Operational Planning Module
 elif selected_module == "Operational Planning":
@@ -73,5 +81,8 @@ elif selected_module == "Help":
 
 # Option to Clear Database
 if st.sidebar.button("Clear All Database Data"):
-    clear_data()
-    st.sidebar.success("All database data has been cleared!")
+    try:
+        clear_data()
+        st.sidebar.success("All database data has been cleared!")
+    except Exception as e:
+        st.sidebar.error(f"Failed to clear database data: {e}")

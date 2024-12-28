@@ -1,10 +1,9 @@
 ﻿import streamlit as st
 import pandas as pd
 import numpy as np
-import matplotlib.pyplot as plt  # Ensure this import is included
-from modules.db_utils import save_risk_data, clear_data
-
-
+import matplotlib.pyplot as plt
+import sqlite3  # Import sqlite3 for database operations
+from modules.db_utils import save_risk_data, clear_data  # Ensure db_utils is correctly configured
 
 def risk_assessment():
     st.header("Risk Assessment Tool")
@@ -99,7 +98,7 @@ def risk_assessment():
 
         # Step 4: Visualization (Bar Chart)
         st.write("### Step 4: Risk Bar Chart")
-        fig, ax = plt.subplots(figsize=(10, 6))  # This line should work now after importing matplotlib.pyplot
+        fig, ax = plt.subplots(figsize=(10, 6))
         df_sorted = df.sort_values(by="Risk Score", ascending=False)
         ax.barh(df_sorted["Risk"], df_sorted["Risk Score"], color='skyblue')
         ax.set_xlabel("Risk Score")
@@ -108,13 +107,15 @@ def risk_assessment():
 
         # Step 5: Overall Risk Score
         overall_risk_score = np.mean(df["Risk Score"])
+        overall_risk_score = max(0, overall_risk_score)  # Ensures no negative score
+
         st.write("### Step 5: Overall Risk Score")
         st.metric(label="Overall Risk Score", value=f"{overall_risk_score:.2f}")
 
         # Gauge-style visualization using a horizontal bar
         fig, ax = plt.subplots(figsize=(8, 2))
         ax.barh(["Overall Risk"], [overall_risk_score], color="orange")
-        ax.set_xlim(0, 10)  # Assuming max score is 10
+        ax.set_xlim(0, max(overall_risk_score * 1.2, 10))  # Dynamically scale based on score
         ax.set_title("Overall Risk Score")
         st.pyplot(fig)
 
@@ -122,14 +123,35 @@ def risk_assessment():
         st.write("### Top 3 Risks Contributing to Overall Risk")
         st.write(df_sorted.head(3))
 
-    # Export to Database Button
+    # Export Overall Risk Score to Database
     if st.button("Export to Other Modules"):
-        risk_db_data = [
-            (row["Risk"], row["Likelihood (%)"], row["Adjusted Impact (£)"], row["Mitigation Cost (£)"], row["Risk Score"])
-            for _, row in df.iterrows()
-        ]
-        save_risk_data(risk_db_data)  # Save to database
-        st.success("Risk data exported to the database!")
+        if not df.empty:
+            try:
+                # Save only the Overall Risk Score
+                conn = sqlite3.connect("business_calculator.db")
+                cursor = conn.cursor()
+
+                # Create or update the overall_risk_score table
+                cursor.execute("""
+                    CREATE TABLE IF NOT EXISTS overall_risk_score (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        score REAL NOT NULL
+                    )
+                """)
+
+                # Clear existing data and insert the new score
+                cursor.execute("DELETE FROM overall_risk_score")
+                cursor.execute("INSERT INTO overall_risk_score (score) VALUES (?)", (overall_risk_score,))
+
+                conn.commit()
+                conn.close()
+
+                st.success("Overall Risk Score exported successfully to the database!")
+                st.write(f"**Exported Overall Risk Score:** {overall_risk_score:.2f}")
+            except Exception as e:
+                st.error(f"Error exporting Overall Risk Score to the database: {e}")
+        else:
+            st.warning("No risk data to export. Please define risks and calculate scores first.")
 
     # Clear Database Button
     if st.button("Clear Risk Data"):

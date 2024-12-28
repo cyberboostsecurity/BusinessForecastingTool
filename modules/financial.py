@@ -2,35 +2,71 @@
 import numpy as np
 import plotly.express as px
 from modules.db_utils import save_to_database, load_from_database
+import sqlite3
 
 # Ensure session state keys are initialized
 if "calculated_revenue" not in st.session_state:
     st.session_state["calculated_revenue"] = 0.0
 if "calculated_costs" not in st.session_state:
     st.session_state["calculated_costs"] = 0.0
-if "risk_adjusted_data" not in st.session_state:
-    st.session_state["risk_adjusted_data"] = {"risk_factor": 1.0}  # Default risk factor
 
 def calculate_adjusted_growth_rate(base_growth_rate):
-    """Calculate adjusted growth rate based on risk data."""
-    risk_data = load_from_database("risk_data", [])
-    risk_factor = 1.0  # Default risk factor
+    """Calculate adjusted growth rate based on the overall risk score."""
+    import sqlite3
+    conn = sqlite3.connect("business_calculator.db")
+    cursor = conn.cursor()
 
-    if risk_data:
-        # Average risk score as a simple adjustment
-        average_risk_score = sum([row[4] for row in risk_data]) / len(risk_data)
-        risk_factor = 1 - (average_risk_score / 100)  # Example adjustment logic
+    try:
+        # Fetch the latest overall risk score from the database
+        cursor.execute("SELECT score FROM overall_risk_score ORDER BY id DESC LIMIT 1")
+        result = cursor.fetchone()
+        conn.close()
 
-    adjusted_growth_rate = base_growth_rate * risk_factor
-    return adjusted_growth_rate
+        if result:
+            overall_risk_score = result[0]
+            # Adjust the formula to decrease growth rate based on the risk score
+            if overall_risk_score > 0:
+                # Decrease growth rate when risk increases
+                risk_factor = 1 - (overall_risk_score / 10000)  # More risk, smaller growth
+            else:
+                # For negative risk, we can increase growth slightly
+                risk_factor = 1 + (abs(overall_risk_score) / 5000)   # Small increase for negative risk
+            
+            # Debugging output
+            st.write("**Debug:** Overall Risk Score:", overall_risk_score)
+            st.write("**Debug:** Risk Factor:", risk_factor)
+            print(f"Overall Risk Score: {overall_risk_score}")
+            print(f"Risk Factor: {risk_factor}")
+        else:
+            st.warning("No Overall Risk Score found in the database.")
+            print("No Overall Risk Score found in the database.")
+            risk_factor = 1.0  # Default factor if no score is found
+
+        # Calculate the adjusted growth rate
+        adjusted_growth_rate = base_growth_rate * risk_factor
+
+        # Provide feedback to the user
+        if risk_factor < 1:
+            st.write(f"**Note:** The growth rate has been adjusted by {100 * (1 - risk_factor):.2f}% due to risk factors.")
+        
+        return adjusted_growth_rate
+
+    except Exception as e:
+        conn.close()
+        st.error(f"Error loading Overall Risk Score: {e}")
+        print(f"Error loading Overall Risk Score: {e}")
+        return base_growth_rate  # Fallback to base growth rate
+
+
 
 def monte_carlo_simulations(base_value, growth_rate, projection_period, iterations=1000, std_dev_factor=0.05):
-    """Run Monte Carlo simulations, handling both growth and loss scenarios."""
+    """Run Monte Carlo simulations, handling both positive and negative growth scenarios."""
     simulated_growth_rates = np.random.normal(
         loc=growth_rate,
         scale=std_dev_factor * max(abs(growth_rate), 0.01),  # Ensure variability
         size=iterations
     )
+
     revenue_simulations = []
     for gr in simulated_growth_rates:
         single_simulation = []
@@ -39,7 +75,9 @@ def monte_carlo_simulations(base_value, growth_rate, projection_period, iteratio
             value *= (1 + gr / 12)  # Monthly growth or decline
             single_simulation.append(max(value, 0))  # Ensure revenue doesn't go negative
         revenue_simulations.append(single_simulation)
+
     return np.array(revenue_simulations)
+
 
 def revenue_projections():
     """Revenue Projections with Monte Carlo simulations."""
@@ -91,7 +129,10 @@ def revenue_projections():
             "p5": p5.tolist(),
             "p95": p95.tolist()
         })
+        st.session_state["calculated_revenue"] = sum(mean_revenue)
         st.success("Revenue data exported successfully.")
+
+
 
 def cost_projections():
     """Cost Projections."""
@@ -107,11 +148,7 @@ def cost_projections():
     ]
 
     months = list(range(1, projection_period + 1))
-    fig = px.line(
-        x=months, y=monthly_costs,
-        labels={"x": "Months", "y": "Costs (£)"},
-        title="Cost Projections Over Time"
-    )
+    fig = px.line(x=months, y=monthly_costs, labels={"x": "Months", "y": "Costs (£)"}, title="Cost Projections Over Time")
     st.plotly_chart(fig)
 
     st.write("### Total Costs")
@@ -127,12 +164,12 @@ def cost_projections():
             "clients": clients,
             "monthly_costs": monthly_costs
         })
+        st.session_state["calculated_costs"] = sum(monthly_costs)
         st.success("Cost data exported successfully.")
 
 def cash_flow_analysis():
     """Cash Flow Analysis."""
     st.subheader("Cash Flow Analysis")
-
     opening_balance = st.number_input("Opening Balance (£)", 0.0, 100000.0, 5000.0)
 
     revenue_data = load_from_database("revenue_projections", {"mean_revenue": []})
@@ -160,49 +197,28 @@ def profit_and_loss_projections():
     """Profit & Loss Projections."""
     st.subheader("Profit & Loss Projections")
 
-    # Add a Pull Data button
     if st.button("Pull Data from SQL"):
-        # Pull revenue and cost data from SQL
-        revenue_data = load_from_database("revenue_projections", default={"mean_revenue": [0]})
-        cost_data = load_from_database("cost_projections", default={"monthly_costs": [0]})
-
-        # Save the pulled data into session_state for immediate use
-        st.session_state["pulled_revenue"] = sum(revenue_data.get("mean_revenue", [0]))
-        st.session_state["pulled_costs"] = sum(cost_data.get("monthly_costs", [0]))
-
+        revenue_data = load_from_database("revenue_projections", {"mean_revenue": [0]})
+        cost_data = load_from_database("cost_projections", {"monthly_costs": [0]})
+        st.session_state["calculated_revenue"] = sum(revenue_data.get("mean_revenue", []))
+        st.session_state["calculated_costs"] = sum(cost_data.get("monthly_costs", []))
         st.success("Data successfully pulled from SQL!")
 
-    # Display pulled data or fallback to zero if not pulled yet
-    total_revenue = st.session_state.get("pulled_revenue", 0)
-    total_costs = st.session_state.get("pulled_costs", 0)
+    total_revenue = st.session_state.get("calculated_revenue", 0)
+    total_costs = st.session_state.get("calculated_costs", 0)
 
-    st.write("### Debug Values")
-    st.write(f"- **Total Revenue (From SQL):** £{total_revenue:,.2f}")
-    st.write(f"- **Total Costs (From SQL):** £{total_costs:,.2f}")
-
-    # Input additional expenses
     additional_expenses = st.slider("Additional Expenses (£)", 0.0, 50000.0, 500.0, 50.0)
-
-    # Calculate gross profit and net profit (allowing negative values)
     gross_profit = total_revenue - total_costs
     net_profit = gross_profit - additional_expenses
 
-    # Display results
     st.write(f"- **Gross Profit:** £{gross_profit:,.2f}")
     st.write(f"- **Net Profit:** £{net_profit:,.2f}")
 
-    # Visualization
     labels = ["Gross Profit", "Additional Expenses", "Net Profit"]
     values = [gross_profit, additional_expenses, net_profit]
+    fig = px.pie(values=values, names=labels, title="Profit Breakdown")
+    st.plotly_chart(fig)
 
-    # Handle edge cases for visualization
-    if all(v == 0 for v in values):
-        st.warning("No valid data to display in the pie chart.")
-    else:
-        fig = px.pie(values=values, names=labels, title="Profit Breakdown")
-        st.plotly_chart(fig)
-
-    # Export data to SQL
     if st.button("Export Profit & Loss Data to SQL"):
         save_to_database("profit_loss", {
             "gross_profit": gross_profit,
@@ -210,15 +226,6 @@ def profit_and_loss_projections():
             "net_profit": net_profit,
         })
         st.success("Profit & Loss data exported successfully.")
-
-
-
-def scenario_comparison():
-    """Scenario Comparison Submodule."""
-    st.subheader("Scenario Comparison")
-    st.write("Simulate and compare outcomes for different scenarios.")
-
-    st.write("**Coming Soon**: Full implementation.")
 
 def financial_forecasting():
     """Main Financial Forecasting Module."""
@@ -230,7 +237,6 @@ def financial_forecasting():
         "Cost Projections",
         "Cash Flow Analysis",
         "Profit & Loss Projections",
-        #"Scenario Comparison"
     ])
 
     if sub_module == "Revenue Projections with Monte Carlo":
@@ -241,5 +247,3 @@ def financial_forecasting():
         cash_flow_analysis()
     elif sub_module == "Profit & Loss Projections":
         profit_and_loss_projections()
-    #elif sub_module == "Scenario Comparison":
-        #scenario_comparison()

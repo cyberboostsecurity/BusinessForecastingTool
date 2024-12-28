@@ -1,6 +1,7 @@
-import streamlit as st
+﻿import streamlit as st
 import numpy as np
 import plotly.express as px
+from modules.db_utils import load_from_database, save_to_database
 
 def investment_financing():
     st.header("Investment and Financing Needs with Monte Carlo")
@@ -23,9 +24,12 @@ def investment_financing():
         goals = ["Hiring New Employees", "Market Expansion", "Product Launch", "Operational Upgrades"]
         cost_data = {}
 
+        staffing_costs_default = load_from_database("staffing_costs", {}).get("mean_staffing_costs", 0.0)
         for goal in goals:
             st.write(f"#### {goal}")
-            base_cost = st.number_input(f"Base Cost for {goal} (\u00A3)", min_value=0.0, step=1000.0, value=10000.0)
+            base_cost_default = staffing_costs_default if goal == "Hiring New Employees" else 10000.0
+            base_cost = st.number_input(
+                f"Base Cost for {goal} (£)", min_value=0.0, step=1000.0, value=base_cost_default)
             variability = st.slider(f"{goal} Cost Variability (%)", min_value=0, max_value=50, value=10) / 100
             cost_data[goal] = (base_cost, variability)
 
@@ -47,8 +51,8 @@ def investment_financing():
         p95_cost = np.percentile(simulated_totals, 95)
 
         st.write("### Monte Carlo Results")
-        st.write(f"- **Mean Total Funding Required:** \u00A3{mean_cost:.2f}")
-        st.write(f"- **Funding Range (5th to 95th Percentile):** \u00A3{p5_cost:.2f} to \u00A3{p95_cost:.2f}")
+        st.write(f"- **Mean Total Funding Required:** £{mean_cost:.2f}")
+        st.write(f"- **Funding Range (5th to 95th Percentile):** £{p5_cost:.2f} to £{p95_cost:.2f}")
 
         # Visualization
         st.write("### Funding Requirements Distribution")
@@ -56,7 +60,7 @@ def investment_financing():
             simulated_totals,
             nbins=50,
             title="Funding Requirements Distribution",
-            labels={"x": "Total Funding (\u00A3)", "y": "Frequency"}
+            labels={"x": "Total Funding (£)", "y": "Frequency"}
         )
         st.plotly_chart(fig)
 
@@ -64,10 +68,21 @@ def investment_financing():
         st.write("### Recommendations")
         if mean_cost < 50000:
             st.success("Your funding requirements are manageable. Consider internal funding or small loans.")
-        elif mean_cost >= 50000 and mean_cost <= 200000:
+        elif 50000 <= mean_cost <= 200000:
             st.info("Your funding requirements are moderate. Evaluate loan options or partnerships.")
         else:
             st.warning("Your funding requirements are high. Consider detailed financial planning or raising equity.")
+
+        # Save Results
+        if st.button("Export Funding Data to SQL"):
+            save_to_database("funding_for_goals", {
+                "mean_total": mean_cost,
+                "range": {
+                    "5th_percentile": p5_cost,
+                    "95th_percentile": p95_cost
+                }
+            })
+            st.success("Funding data exported successfully!")
 
     # Submodule: Investment Returns
     elif sub_module == "Investment Returns":
@@ -77,23 +92,27 @@ def investment_financing():
         # Step 1: Input Investment Details
         st.write("### Step 1: Input Investment Details")
         investment_amount = st.number_input(
-            "Initial Investment Amount (\u00A3)", min_value=0.0, step=1000.0, value=50000.0
+            "Initial Investment Amount (£)", min_value=0.0, step=1000.0, value=50000.0
         )
+        projected_revenue_default = load_from_database("revenue_projections", {}).get("mean_revenue", 0.0)
         projected_revenue = st.number_input(
-            "Projected Annual Revenue from Investment (\u00A3)", min_value=0.0, step=1000.0, value=70000.0
+            "Projected Annual Revenue from Investment (£)",
+            min_value=0.0,
+            step=1000.0,
+            value=projected_revenue_default
         )
         variability = st.slider(
             "Revenue Variability (%)", min_value=0, max_value=50, value=10
-        )
+        ) / 100
         duration = st.number_input(
-            "Investment Duration (Years)", min_value=1, max_value=10, value=5
+            "Investment Duration (Years)", min_value=1, max_value=10, step=1, value=5
         )
 
         # Monte Carlo Simulations
         simulations = 1000
         annual_revenues = np.random.normal(
             loc=projected_revenue,
-            scale=projected_revenue * (variability / 100),
+            scale=projected_revenue * variability,
             size=(simulations, duration)
         )
         cumulative_revenues = np.cumsum(annual_revenues, axis=1)
@@ -154,6 +173,22 @@ def investment_financing():
         else:
             st.warning("This investment may not yield significant returns. Reassess your plans.")
 
+        # Save Results
+        if st.button("Export Investment Returns Data to SQL"):
+            save_to_database("investment_returns", {
+                "mean_roi": mean_roi,
+                "roi_range": {
+                    "5th_percentile": p5_roi,
+                    "95th_percentile": p95_roi
+                },
+                "payback_periods": {
+                    "mean": mean_payback,
+                    "5th_percentile": p5_payback,
+                    "95th_percentile": p95_payback
+                }
+            })
+            st.success("Investment Returns data exported successfully!")
+
     # Submodule: Debt vs. Equity Analysis
     elif sub_module == "Debt vs. Equity Analysis":
         st.subheader("Debt vs. Equity Analysis")
@@ -161,7 +196,7 @@ def investment_financing():
 
         # Debt Inputs
         st.write("### Step 1: Debt Funding")
-        loan_amount = st.number_input("Loan Amount (\u00A3)", min_value=0.0, step=1000.0, value=50000.0)
+        loan_amount = st.number_input("Loan Amount (£)", min_value=0.0, step=1000.0, value=50000.0)
         interest_rate = st.slider("Annual Interest Rate (%)", min_value=1.0, max_value=20.0, step=0.1, value=5.0) / 100
         repayment_period = st.number_input("Repayment Period (Years)", min_value=1, max_value=30, step=1, value=5)
 
@@ -174,33 +209,33 @@ def investment_financing():
         cost_of_debt = total_repayment - loan_amount
 
         st.write("### Debt Metrics")
-        st.write(f"- **Monthly Payment:** \u00A3{monthly_payment:.2f}")
-        st.write(f"- **Total Repayment:** \u00A3{total_repayment:.2f}")
-        st.write(f"- **Cost of Debt:** \u00A3{cost_of_debt:.2f}")
+        st.write(f"- **Monthly Payment:** £{monthly_payment:.2f}")
+        st.write(f"- **Total Repayment:** £{total_repayment:.2f}")
+        st.write(f"- **Cost of Debt:** £{cost_of_debt:.2f}")
 
         # Equity Inputs
         st.write("### Step 2: Equity Funding")
-        business_valuation = st.number_input("Business Valuation (\u00A3)", min_value=0.0, step=10000.0, value=500000.0)
+        business_valuation = st.number_input("Business Valuation (£)", min_value=0.0, step=10000.0, value=500000.0)
         equity_offered = st.slider("Equity Percentage Offered (%)", min_value=1, max_value=50, step=1, value=10) / 100
         cost_of_equity = business_valuation * equity_offered
         ownership_dilution = equity_offered * 100
 
         st.write("### Equity Metrics")
-        st.write(f"- **Cost of Equity:** \u00A3{cost_of_equity:.2f}")
+        st.write(f"- **Cost of Equity:** £{cost_of_equity:.2f}")
         st.write(f"- **Ownership Dilution:** {ownership_dilution:.2f}%")
 
         # Comparison
         st.write("### Comparison")
         comparison_data = {
             "Funding Type": ["Debt", "Equity"],
-            "Cost (\u00A3)": [cost_of_debt, cost_of_equity]
+            "Cost (£)": [cost_of_debt, cost_of_equity]
         }
         fig_comparison = px.bar(
             comparison_data,
             x="Funding Type",
-            y="Cost (\u00A3)",
+            y="Cost (£)",
             title="Debt vs. Equity Cost Comparison",
-            labels={"Cost (\u00A3)": "Cost"}
+            labels={"Cost (£)": "Cost"}
         )
         st.plotly_chart(fig_comparison)
 
@@ -210,3 +245,18 @@ def investment_financing():
             st.success("Debt funding is more cost-effective based on your inputs.")
         else:
             st.info("Equity funding may be favorable for long-term growth.")
+
+        # Save Results
+        if st.button("Export Debt vs. Equity Data to SQL"):
+            save_to_database("debt_vs_equity", {
+                "debt": {
+                    "monthly_payment": monthly_payment,
+                    "total_repayment": total_repayment,
+                    "cost_of_debt": cost_of_debt
+                },
+                "equity": {
+                    "cost_of_equity": cost_of_equity,
+                    "ownership_dilution": ownership_dilution
+                }
+            })
+            st.success("Debt vs. Equity data exported successfully!")

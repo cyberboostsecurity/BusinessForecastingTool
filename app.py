@@ -1,5 +1,4 @@
 ﻿import streamlit as st
-from modules.operational import operational_planning
 from modules.financial import financial_forecasting
 from modules.risk_assessment import risk_assessment
 from modules.growth_scaling import growth_scaling
@@ -24,7 +23,6 @@ selected_module = st.sidebar.radio(
         "Financial Forecasting",
         "Workforce and Culture Projections",            
         "Growth & Scaling Strategy",
-        "Operational Planning",
         "Investment and Financing Needs",        
         "Dashboard",
     ]
@@ -54,10 +52,6 @@ elif selected_module == "Financial Forecasting":
         financial_forecasting()
     except Exception as e:
         st.error(f"An error occurred in Financial Forecasting: {e}")
-
-# Operational Planning Module
-elif selected_module == "Operational Planning":
-    operational_planning()
 
 # Risk Assessment Module
 elif selected_module == "Risk Assessment":

@@ -1,14 +1,14 @@
 ﻿import streamlit as st
 import numpy as np
 import plotly.express as px
-from modules.db_utils import save_to_database
+from modules.db_utils import save_to_database, load_from_database
 
 def workforce_projections():
     st.header("Workforce and Culture Projections with Monte Carlo")
     st.info("Analyze staffing costs, productivity metrics, and employee affordability.")
 
     sub_module = st.selectbox("Select a Sub-Module", [
-        "Staffing Costs", "Productivity Management", "Employee Affordability"
+        "Staffing Costs", "Employee Affordability"
     ])
 
     # Submodule: Staffing Costs
@@ -74,116 +74,13 @@ def workforce_projections():
         )
         st.plotly_chart(fig_costs)
 
-        # Save to SQL
         if st.button("Export Staffing Costs to SQL"):
             save_to_database("staffing_costs", {
-                "role_data": role_data,
-                "recruitment_costs": recruitment_costs,
-                "training_costs": training_costs,
-                "overhead_allocation": overhead_allocation,
-                "tax_rate": tax_rate,
                 "mean_costs": mean_costs,
                 "p5_costs": p5_costs,
                 "p95_costs": p95_costs
             })
-            st.success("Staffing Costs data exported to SQL successfully!")
-
-    # Submodule: Productivity Management
-    elif sub_module == "Productivity Management":
-        st.subheader("Productivity Management with Monte Carlo")
-        st.write("Analyze workforce productivity and utilization rates using probabilistic simulations.")
-
-        # Inputs
-        num_employees = st.number_input(
-            "Number of Employees", min_value=1, step=1,
-            help="Total number of employees in your workforce."
-        )
-        avg_hours_worked_per_employee = st.number_input(
-            "Average Hours Worked per Employee (Monthly)", min_value=0.0, step=1.0,
-            help="Enter the average hours worked by each employee in a month."
-        )
-        hours_variability = st.slider(
-            "Hours Worked Variability (%)", min_value=0, max_value=50, value=10,
-            help="Expected variability in hours worked per employee."
-        )
-        total_hours_available = st.number_input(
-            "Total Hours Available (Monthly)", min_value=0.0, step=1.0,
-            help="Enter the total available hours across all employees in a month."
-        )
-        revenue_generated = st.number_input(
-            "Monthly Revenue (£)", min_value=0.0, step=100.0,
-            help="Enter the total monthly revenue generated."
-        )
-        revenue_variability = st.slider(
-            "Revenue Variability (%)", min_value=0, max_value=50, value=10,
-            help="Expected variability in monthly revenue."
-        )
-
-        # Monte Carlo Simulations
-        simulations = 1000
-        simulated_hours = np.random.normal(
-            loc=avg_hours_worked_per_employee,
-            scale=avg_hours_worked_per_employee * (hours_variability / 100),
-            size=(simulations, num_employees)
-        )
-        total_simulated_hours = simulated_hours.sum(axis=1)
-        simulated_revenue = np.random.normal(
-            loc=revenue_generated,
-            scale=revenue_generated * (revenue_variability / 100),
-            size=simulations
-        )
-        productivity_rates = (total_simulated_hours / total_hours_available) * 100
-        revenue_per_hour = simulated_revenue / total_simulated_hours
-
-        mean_productivity_rate = np.mean(productivity_rates)
-        p5_productivity_rate = np.percentile(productivity_rates, 5)
-        p95_productivity_rate = np.percentile(productivity_rates, 95)
-
-        mean_revenue_per_hour = np.mean(revenue_per_hour)
-        p5_revenue_per_hour = np.percentile(revenue_per_hour, 5)
-        p95_revenue_per_hour = np.percentile(revenue_per_hour, 95)
-
-        st.write("### Monte Carlo Results")
-        st.write(f"- **Mean Productivity Rate:** {mean_productivity_rate:.2f}%")
-        st.write(f"- **Productivity Rate Range (5th to 95th Percentile):** {p5_productivity_rate:.2f}% to {p95_productivity_rate:.2f}%")
-        st.write(f"- **Mean Revenue per Hour:** £{mean_revenue_per_hour:.2f}")
-        st.write(f"- **Revenue per Hour Range (5th to 95th Percentile):** £{p5_revenue_per_hour:.2f} to £{p95_revenue_per_hour:.2f}")
-
-        # Visualizations
-        st.write("### Productivity Rate Distribution")
-        fig_productivity = px.histogram(
-            productivity_rates,
-            nbins=50,
-            title="Productivity Rate Distribution",
-            labels={"x": "Productivity Rate (%)", "y": "Frequency"}
-        )
-        st.plotly_chart(fig_productivity)
-
-        st.write("### Revenue per Hour Distribution")
-        fig_revenue_per_hour = px.histogram(
-            revenue_per_hour,
-            nbins=50,
-            title="Revenue per Hour Distribution",
-            labels={"x": "Revenue per Hour (£)", "y": "Frequency"}
-        )
-        st.plotly_chart(fig_revenue_per_hour)
-
-        # Save to SQL
-        if st.button("Export Productivity Data to SQL"):
-            save_to_database("productivity_management", {
-                "num_employees": num_employees,
-                "avg_hours_worked_per_employee": avg_hours_worked_per_employee,
-                "hours_variability": hours_variability,
-                "total_hours_available": total_hours_available,
-                "revenue_generated": revenue_generated,
-                "mean_productivity_rate": mean_productivity_rate,
-                "p5_productivity_rate": p5_productivity_rate,
-                "p95_productivity_rate": p95_productivity_rate,
-                "mean_revenue_per_hour": mean_revenue_per_hour,
-                "p5_revenue_per_hour": p5_revenue_per_hour,
-                "p95_revenue_per_hour": p95_revenue_per_hour
-            })
-            st.success("Productivity data exported to SQL successfully!")
+            st.success("Staffing costs data exported successfully!")
 
     # Submodule: Employee Affordability
     elif sub_module == "Employee Affordability":
@@ -260,18 +157,10 @@ def workforce_projections():
         else:
             st.write("No affordability achieved in the given time frame.")
 
-        # Save to SQL
-        if st.button("Export Employee Affordability Data to SQL"):
+        if st.button("Export Employee Affordability to SQL"):
             save_to_database("employee_affordability", {
-                "salary": salary,
-                "overhead": overhead,
-                "production_rate": production_rate,
-                "initial_revenue": initial_revenue,
-                "growth_rate": growth_rate,
-                "revenue_variability": revenue_variability,
-                "max_simulation_months": max_simulation_months,
                 "mean_time": mean_time,
                 "p5_time": p5_time,
                 "p95_time": p95_time
             })
-            st.success("Employee Affordability data exported to SQL successfully!")
+            st.success("Employee affordability data exported successfully!")

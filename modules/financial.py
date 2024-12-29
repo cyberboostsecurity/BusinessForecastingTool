@@ -12,7 +12,6 @@ if "calculated_costs" not in st.session_state:
 
 def calculate_adjusted_growth_rate(base_growth_rate):
     """Calculate adjusted growth rate based on the overall risk score."""
-    import sqlite3
     conn = sqlite3.connect("business_calculator.db")
     cursor = conn.cursor()
 
@@ -133,7 +132,6 @@ def revenue_projections():
         st.success("Revenue data exported successfully.")
 
 
-
 def cost_projections():
     """Cost Projections."""
     st.subheader("Cost Projections")
@@ -192,6 +190,14 @@ def cash_flow_analysis():
     values = [opening_balance, net_profit, closing_balance]
     fig = px.bar(x=labels, y=values, labels={"x": "Category", "y": "Amount (£)"}, title="Cash Flow Analysis")
     st.plotly_chart(fig)
+
+    if st.button("Export Cash Flow Data to SQL"):
+        save_to_database("cash_flow_analysis", {
+            "opening_balance": opening_balance,
+            "net_profit": net_profit,
+            "closing_balance": closing_balance,
+        })
+        st.success("Cash Flow data exported successfully.")
 
 def profit_and_loss_projections():
     """Profit & Loss Projections."""

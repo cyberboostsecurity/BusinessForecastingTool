@@ -29,6 +29,53 @@ def init_db():
     )
     """)
 
+    # Create the financial metrics table if it doesn't exist
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS financial_metrics (
+        total_revenue REAL,
+        total_costs REAL,
+        profit_loss REAL
+    )
+    """)
+
+    # Create the workforce metrics table if it doesn't exist
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS workforce_metrics (
+        total_staffing_costs REAL,
+        revenue_per_employee REAL,
+        cost_categories TEXT,
+        cost_values TEXT
+    )
+    """)
+
+    # Create the growth metrics table if it doesn't exist
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS growth_metrics (
+        average_roi REAL,
+        payback_period REAL,
+        roi_distribution TEXT
+    )
+    """)
+
+    # Create the risk metrics table if it doesn't exist
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS risk_metrics (
+        overall_risk_score REAL,
+        mitigated_risks INTEGER,
+        unmitigated_risks INTEGER,
+        risk_categories TEXT,
+        risk_values TEXT
+    )
+    """)
+
+    # Create other necessary tables
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS overall_risk_score (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        score REAL NOT NULL
+    )
+    """)
+
     conn.commit()
     conn.close()
 
@@ -69,9 +116,16 @@ def clear_data(key=None):
     
     if key:
         cursor.execute("DELETE FROM data WHERE key = ?", (key,))
+        cursor.execute(f"DELETE FROM {key}")  # Deleting from specific table if the key matches
     else:
-        cursor.execute("DELETE FROM data")
-    
+        # Clear all relevant tables
+        cursor.execute("DELETE FROM data")  # Clear general data table
+        cursor.execute("DELETE FROM risk_data")  # Clear risk data
+        cursor.execute("DELETE FROM financial_metrics")  # Clear financial metrics
+        cursor.execute("DELETE FROM workforce_metrics")  # Clear workforce metrics
+        cursor.execute("DELETE FROM growth_metrics")  # Clear growth metrics
+        cursor.execute("DELETE FROM overall_risk_score")  # Clear overall risk score table
+
     conn.commit()
     conn.close()
 

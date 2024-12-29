@@ -1,6 +1,5 @@
 ﻿import streamlit as st
 import plotly.express as px
-import pandas as pd
 from modules.db_utils import load_from_database
 
 def dashboard():
@@ -14,18 +13,19 @@ def dashboard():
     # Financial Overview
     with tab1:
         st.subheader("Financial Overview")
-
+        
         # Load data from database
-        financial_data = load_from_database("financial_metrics", default={})
+        financial_data = load_from_database("revenue_projections", default={})
         if financial_data:
-            st.metric("Total Revenue", f"\u00A3{financial_data.get('total_revenue', 0):.2f}")
-            st.metric("Total Costs", f"\u00A3{financial_data.get('total_costs', 0):.2f}")
-            st.metric("Profit/Loss", f"\u00A3{financial_data.get('profit_loss', 0):.2f}")
+            # Display KPIs
+            st.metric("Total Revenue", f"\u00A3{sum(financial_data.get('mean_revenue', [])):.2f}")
+            st.metric("Total Costs", f"\u00A3{sum(financial_data.get('total_costs', [])):.2f}")
+            st.metric("Profit/Loss", f"\u00A3{sum(financial_data.get('mean_revenue', [])) - sum(financial_data.get('total_costs', [])):.2f}")
 
             # Visualization: Revenue vs Costs
             fig = px.bar(
                 x=["Revenue", "Costs"],
-                y=[financial_data.get('total_revenue', 0), financial_data.get('total_costs', 0)],
+                y=[sum(financial_data.get('mean_revenue', [])), sum(financial_data.get('total_costs', []))],
                 labels={"x": "Category", "y": "Amount"},
                 title="Revenue vs Costs"
             )
@@ -36,12 +36,12 @@ def dashboard():
     # Workforce Overview
     with tab2:
         st.subheader("Workforce Overview")
-
+        
         # Load data from database
         workforce_data = load_from_database("workforce_metrics", default={})
         if workforce_data:
-            st.metric("Total Staffing Costs", f"\u00A3{workforce_data.get('total_staffing_costs', 0):.2f}")
-            st.metric("Average Revenue per Employee", f"\u00A3{workforce_data.get('revenue_per_employee', 0):.2f}")
+            st.metric("Total Staffing Costs", f"\u00A3{workforce_data.get('total_staffing_costs', 0):,.2f}")
+            st.metric("Revenue per Employee", f"\u00A3{workforce_data.get('revenue_per_employee', 0):,.2f}")
 
             # Visualization: Staffing Cost Breakdown
             fig = px.pie(
@@ -56,7 +56,7 @@ def dashboard():
     # Growth & Scaling Overview
     with tab3:
         st.subheader("Growth & Scaling Overview")
-
+        
         # Load data from database
         growth_data = load_from_database("growth_metrics", default={})
         if growth_data:
@@ -76,7 +76,7 @@ def dashboard():
     # Risk Assessment Overview
     with tab4:
         st.subheader("Risk Assessment Overview")
-
+        
         # Load data from database
         risk_data = load_from_database("risk_metrics", default={})
         if risk_data:
@@ -101,7 +101,7 @@ def dashboard():
 
         # Define the keys/modules to test
         keys_to_test = [
-            "financial_metrics",
+            "revenue_projections",
             "workforce_metrics",
             "growth_metrics",
             "risk_metrics",
